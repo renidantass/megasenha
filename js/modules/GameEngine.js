@@ -496,23 +496,31 @@ export class GameEngine {
     async actionPass() {
         if (!this.serverState) return;
         
-        const nextWordIndex = this.serverState.currentWordIndex + 1;
-
+        // Pegar a palavra atual
+        const currentWordIndex = this.serverState.currentWordIndex;
+        const currentWord = this.serverState.words[currentWordIndex];
+        
+        // Criar novo array de palavras com a palavra atual movida para o final
+        const words = [...this.serverState.words];
+        words.splice(currentWordIndex, 1); // Remove a palavra da posição atual
+        words.push(currentWord); // Adiciona no final
+        
         // Preparar dados para atualizar
         const updateData = {
-            currentWordIndex: nextWordIndex
+            words: words,
+            // O índice permanece o mesmo, pois a próxima palavra está na mesma posição
+            lastEvent: 'pass_' + Date.now()
         };
 
-        // Verificar se terminou a rodada
-        if (nextWordIndex >= (this.serverState.words || []).length) {
-            // Fim da rodada
+        // Verificar se ainda há palavras disponíveis
+        if (words.length === 0) {
+            // Fim da rodada (não há mais palavras)
             updateData.status = 'result';
             updateData.lastEvent = 'round_end_' + Date.now();
             this.net.updateState(updateData);
             this.showResult(this.serverState.currentTurn, this.serverState.scores[this.serverState.currentTurn]);
         } else {
-            // Continuar com próxima palavra
-            updateData.lastEvent = 'pass_' + Date.now();
+            // Continuar com próxima palavra (que já está na posição currentWordIndex)
             this.net.updateState(updateData);
         }
     }
