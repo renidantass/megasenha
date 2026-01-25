@@ -598,7 +598,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, updateDoc, deleteField, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const customConfig =  {
             apiKey: "AIzaSyDoaWmTN2513e5LGxOq--65ekL4PMqjUAs",
@@ -835,6 +835,30 @@
                     return true;
                 }
                 return false;
+            }
+
+            // NOVA FUNÇÃO DE LEAVE ROOM
+            async leaveRoom() {
+                if (!this.roomId || !this.user) {
+                    this.reset();
+                    return;
+                }
+
+                const roomRef = doc(db, 'mega_senha_sessions', this.roomId);
+                const uid = this.user.uid;
+
+                try {
+                    // Remove do mapa de jogadores e das listas de times
+                    await updateDoc(roomRef, {
+                        [`players.${uid}`]: deleteField(),
+                        "teams.red": arrayRemove(uid),
+                        "teams.blue": arrayRemove(uid)
+                    });
+                } catch (e) {
+                    console.error("Erro ao sair da sala:", e);
+                }
+
+                this.reset();
             }
 
             subscribeToRoom(code) {
@@ -1316,12 +1340,6 @@
                 const nextRoundNum = this.serverState.roundNumber + 1;
                 
                 const isSingleTeam = this.serverState.teams.blue.length === 0 || this.serverState.teams.red.length === 0;
-                
-                // If 2 teams, each team plays every 2 rounds.
-                // Red plays R0, R2, R4...
-                // Blue plays R1, R3, R5...
-                // So Rotation Index = floor(Round / 2)
-                
                 const rotationIndex = isSingleTeam ? nextRoundNum : Math.floor(nextRoundNum / 2);
                 
                 this.setupRound(
@@ -1386,9 +1404,10 @@
                 }
             }
 
-            quit() {
+            async quit() {
                 if(this.localTimer) clearInterval(this.localTimer);
-                this.net.reset();
+                // Call leaveRoom to clean up in Firestore
+                await this.net.leaveRoom();
                 this.ui.showScreen('menu');
             }
 
