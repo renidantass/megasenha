@@ -248,6 +248,21 @@
             padding: 0.8rem;
             width: 100%;
         }
+        
+        .btn-reset {
+            background: transparent;
+            color: #64748b;
+            font-size: 0.8rem;
+            padding: 5px;
+            margin-top: 10px;
+            border: 1px dashed #475569;
+            border-radius: 5px;
+            width: 100%;
+        }
+        .btn-reset:hover {
+            color: #ef4444;
+            border-color: #ef4444;
+        }
 
         /* --- LOBBY INFO --- */
         .room-badge {
@@ -425,6 +440,10 @@
             <button id="btn-sound" class="btn btn-sound">
                 🔊 Sons Ligados
             </button>
+            
+            <button id="btn-force-reset" class="btn btn-reset">
+                ↻ Trocar ID / Resetar (Use p/ testar)
+            </button>
         </div>
     </div>
 
@@ -531,7 +550,7 @@
     <!-- === JAVASCRIPT === -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const customConfig =  {
@@ -596,15 +615,25 @@
                 this.onStateChange = null; 
             }
 
+            async forceNewIdentity() {
+                if (auth.currentUser) {
+                    await signOut(auth);
+                    this.user = null;
+                    alert("Identidade resetada. Agora você pode entrar como um novo jogador.");
+                }
+            }
+
             async init() {
-                if (this.user) return;
+                if (auth.currentUser) {
+                    this.user = auth.currentUser;
+                    return;
+                }
                 
-                // Prioritize Custom Token (for seamless environments)
+                // Prioritize Custom Token
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     try {
                         const cred = await signInWithCustomToken(auth, __initial_auth_token);
                         this.user = cred.user;
-                        console.log("Autenticado com token");
                         return;
                     } catch (e) { console.warn("Fallback anonymous", e); }
                 }
@@ -613,7 +642,6 @@
                 try {
                     const cred = await signInAnonymously(auth);
                     this.user = cred.user;
-                    console.log("Autenticado anonimo");
                 } catch (e) { 
                     console.error("Falha Auth:", e); 
                     alert("Erro de autenticação. Verifique o console.");
@@ -673,8 +701,12 @@
                 if (snap.exists()) {
                     this.roomId = code;
                     this.isHost = false;
+                    
+                    // SAFE UPDATE using dot notation string construction
                     const updateData = {};
-                    updateData[`players.${this.user.uid}`] = { nickname: nickname, role: 'player', team: null };
+                    const key = "players." + this.user.uid;
+                    updateData[key] = { nickname: nickname, role: 'player', team: null };
+                    
                     await updateDoc(roomRef, updateData);
                     this.subscribeToRoom(code);
                     return true;
@@ -810,7 +842,7 @@
                 this.listBlue.innerHTML = '';
                 this.listLobby.innerHTML = '';
 
-                if (!state) return;
+                if (!state || !state.players) return;
 
                 const scores = state.scores || { red: 0, blue: 0 };
                 const teams = state.teams || { red: [], blue: [] };
@@ -966,6 +998,9 @@
                     const en = this.audio.toggle();
                     e.target.textContent = en ? '🔊 Sons Ligados' : '🔇 Sons Desligados';
                 };
+                
+                // NOVO: Botão de reset
+                document.getElementById('btn-force-reset').onclick = () => this.net.forceNewIdentity();
             }
 
             getNick() {
