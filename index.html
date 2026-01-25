@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -84,7 +84,7 @@
             max-height: 40vh;
             overflow-y: auto;
             transition: transform 0.3s ease, opacity 0.3s ease;
-            z-index: 40; 
+            z-index: 40; /* Lower than chat */
             box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
         }
         
@@ -107,7 +107,7 @@
                 flex-direction: column;
                 flex-wrap: nowrap;
                 max-height: 90vh;
-                min-width: 240px;
+                min-width: 220px;
                 width: auto;
             }
             #participants-sidebar.hidden-sidebar {
@@ -232,6 +232,36 @@
             opacity: 1;
             pointer-events: all;
         }
+
+        /* --- RULES MODAL --- */
+        .rules-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            padding: 20px;
+        }
+        .rules-modal.active { opacity: 1; pointer-events: all; }
+        .rules-content {
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            color: #cbd5e1;
+        }
+        .rules-content h2 { color: #60a5fa; margin-bottom: 10px; }
+        .rules-content ul { padding-left: 20px; margin-bottom: 15px; }
+        .rules-content li { margin-bottom: 5px; }
 
         /* --- CHAT SYSTEM --- */
         .chat-btn-float {
@@ -525,7 +555,23 @@
             max-width: 400px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             text-align: center;
+            position: relative;
         }
+        .btn-help {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #94a3b8;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-help:hover { color: white; border-color: white; }
+
         .input-group {
             position: relative;
             margin-bottom: 1rem;
@@ -546,6 +592,11 @@
             border-color: var(--primary-color);
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
+        /* Increased spacing here */
+        #input-room-code {
+            margin-bottom: 1.5rem; 
+        }
+
         .btn-refresh-nick {
             position: absolute;
             right: 10px;
@@ -741,11 +792,28 @@
     <!-- === LOADING OVERLAY === -->
     <div id="loading-overlay" class="hidden">Conectando...</div>
 
+    <!-- === RULES MODAL === -->
+    <div id="rules-modal" class="rules-modal">
+        <div class="rules-content">
+            <h2>Como Jogar</h2>
+            <ul>
+                <li>Formem duas equipas: Vermelha e Azul.</li>
+                <li>Em cada ronda, um jogador dá as dicas e outro tenta adivinhar.</li>
+                <li><strong>Dica:</strong> Apenas uma palavra. Não vale gestos ou palavras da mesma família.</li>
+                <li><strong>Acertou:</strong> Ponto para a equipa e próxima palavra.</li>
+                <li><strong>Pular:</strong> Passa para a próxima palavra (não pontua).</li>
+                <li>Ganha a equipa com mais pontos no final!</li>
+            </ul>
+            <button id="btn-close-rules" class="btn btn-sound">Fechar</button>
+        </div>
+    </div>
+
     <!-- === PAUSE OVERLAY === -->
     <div id="pause-overlay" class="pause-overlay">
         <div style="font-size: 4rem; margin-bottom: 20px;">⏸</div>
         <div>JOGO PAUSADO</div>
-        <p style="font-size: 1rem; color: #94a3b8; margin-top: 10px;">Aguardando o Host...</p>
+        <p style="font-size: 1rem; color: #94a3b8; margin-top: 10px; margin-bottom: 20px;">Aguardando o Host...</p>
+        <button id="btn-resume-overlay" class="btn btn-start hidden" style="background: linear-gradient(to right, #3b82f6, #2563eb); width: auto; padding: 10px 30px;">RETOMAR JOGO</button>
     </div>
 
     <!-- === SIDEBAR: PARTICIPANTES === -->
@@ -814,6 +882,7 @@
             <div class="title-senha">SENHA</div>
         </div>
         <div class="menu-card">
+            <button id="btn-open-rules" class="btn-help" title="Regras">?</button>
             
             <!-- Nickname Input -->
             <div class="input-group">
@@ -1015,7 +1084,6 @@
                 "FACA", "GARFO", "COLHER", "PRATO", "COPO", "XÍCARA", "PANELA", "FOGÃO", "GELADEIRA", "MICROONDAS",
                 "PIZZA", "HAMBURGUER", "BATATA", "SALADA", "FRUTA", "SUCO", "CERVEJA", "VINHO", "FESTA", "BOLO",
                 "VELA", "PRESENTE", "NATAL", "PÁSCOA", "CARNAVAL", "IGREJA", "SHOPPING", "MERCADO", "FARMÁCIA", "HOSPITAL",
-                
                 // Novos - Objetos
                 "CHAVE", "CARTEIRA", "BOLSA", "MOCHILA", "ESPELHO", "PENTE", "ESCOVA", "TOALHA", "SABONETE", "SHAMPOO",
                 "PERFUME", "BATOM", "ANEL", "BRINCO", "COLAR", "PULSEIRA", "RELÓGIO", "ÓCULOS", "CHAPÉU", "BONÉ",
@@ -1029,7 +1097,6 @@
                 "VARAL", "CESTO", "GAVETA", "ARMÁRIO", "GUARDA-ROUPA", "CÔMODA", "ESTANTE", "PRATELEIRA", "RACK", "SOFÁ",
                 "POLTRONA", "PUFF", "ALMOFADA", "LENÇOL", "COBERTOR", "EDREDOM", "TRAVESSEIRO", "FRONHA", "COLCHÃO", "CAMA",
                 "BERÇO", "CARRINHO", "MAMADEIRA", "CHUPETA", "FRALDA", "BRINQUEDO", "BONECA", "CARRINHO", "BOLA", "PIPA",
-                
                 // Novos - Animais
                 "LEÃO", "TIGRE", "ONÇA", "LEOPARDO", "GUEPARDO", "LOBO", "RAPOSA", "URSO", "PANDA", "COALA",
                 "CANGURU", "MACACO", "GORILA", "CHIMPANZÉ", "SAGUI", "MICO", "PREGUIÇA", "TATU", "TAMANDUÁ", "ANTA",
@@ -1045,7 +1112,6 @@
                 "GANSO", "CISNE", "MARRECO", "GALINHA", "GALO", "PINTO", "PERU", "PAVÃO", "FAISÃO", "CODORNA",
                 "AVESTRUZ", "EMA", "ÁGUIA", "GAVIÃO", "FALCÃO", "CORUJA", "URUBU", "ABUTRE", "CONDOR", "PAPAGAIO",
                 "ARARA", "PERIQUITO", "TUCANO", "BEIJA-FLOR", "CANÁRIO", "SABIÁ", "BEM-TE-VI", "JOÃO-DE-BARRO", "PICA-PAU", "POMBA",
-                
                 // Novos - Lugares
                 "CIDADE", "CAMPO", "FAZENDA", "SÍTIO", "CHÁCARA", "PRAIA", "ILHA", "MONTANHA", "SERRA", "VALE",
                 "DESERTO", "FLORESTA", "MATA", "SELVA", "BOSQUE", "JARDIM", "PARQUE", "PRAÇA", "RUA", "AVENIDA",
@@ -1058,7 +1124,6 @@
                 "BANCO", "CAIXA", "LOTÉRICA", "CORREIO", "CARTÓRIO", "PREFEITURA", "FÓRUM", "DELEGACIA", "PRISÃO", "CADEIA",
                 "QUARTEL", "BOMBEIRO", "HOSPITAL", "CLÍNICA", "CONSULTÓRIO", "LABORATÓRIO", "POSTO", "ESCOLA", "COLÉGIO", "FACULDADE",
                 "UNIVERSIDADE", "CRECHE", "BERÇÁRIO", "CURSINHO", "BIBLIOTECA", "MUSEU", "TEATRO", "CINEMA", "CIRCO", "ESTÁDIO",
-                
                 // Novos - Comidas
                 "ARROZ", "FEIJÃO", "MACARRÃO", "LASANHA", "NHOQUE", "PIZZA", "HAMBÚRGUER", "SANDUÍCHE", "HOT-DOG", "PASTEL",
                 "COXINHA", "KIBE", "ESFIHA", "EMPADA", "TORTA", "QUICHE", "SOPA", "CALDO", "CREME", "MINGAU",
@@ -1067,7 +1132,6 @@
                 "VERDURA", "FRUTA", "DOCE", "BOLO", "PUDIM", "MOUSSE", "GELATINA", "SORVETE", "AÇAÍ", "CHOCOLATE",
                 "BOMBOM", "TRUFA", "BALA", "CHICLETE", "PIRULITO", "BISCOITO", "BOLACHA", "PÃO", "TORRADA", "CROISSANT",
                 "SONHO", "BRIGADEIRO", "BEIJINHO", "CAJUZINHO", "PAÇOCA", "PÉ-DE-MOLEQUE", "COCADA", "QUINDIM", "BEM-CASADO", "ALFAJOR",
-                
                 // Novos - Profissões
                 "MÉDICO", "ENFERMEIRO", "DENTISTA", "VETERINÁRIO", "PSICÓLOGO", "ADVOGADO", "JUIZ", "PROMOTOR", "DELEGADO", "POLICIAL",
                 "BOMBEIRO", "SEGURANÇA", "PORTEIRO", "FAXINEIRO", "EMPREGADA", "COZINHEIRO", "CHEF", "GARÇOM", "PADEIRO", "CONFEITEIRO",
@@ -1076,7 +1140,6 @@
                 "MAQUINISTA", "FERROVIÁRIO", "MARINHEIRO", "CAPITÃO", "PESCADOR", "AGRICULTOR", "FAZENDEIRO", "JARDINEIRO", "PEDREIRO", "MESTRE",
                 "ENCANADOR", "ELETRICISTA", "MARCENEIRO", "CARPINTEIRO", "SERRALHEIRO", "PINTOR", "MECÂNICO", "BORRACHEIRO", "LATOEIRO", "FUNILEIRO",
                 "ENGENHEIRO", "ARQUITETO", "DECORADOR", "DESIGNER", "PROGRAMADOR", "ANALISTA", "TÉCNICO", "CIENTISTA", "PESQUISADOR", "PROFESSOR",
-                
                 // Novos - Verbos / Ações
                 "CORRER", "ANDAR", "PULAR", "SALTAR", "DANÇAR", "CANTAR", "GRITAR", "FALAR", "OUVIR", "VER",
                 "OLHAR", "ASSISTIR", "COMER", "BEBER", "DORMIR", "ACORDAR", "SONHAR", "PENSAR", "ESTUDAR", "LER",
@@ -1169,9 +1232,14 @@
                     currentWordIndex: 0,
                     roundStartTime: null,
                     roundNumber: 0, 
+                    isPaused: false, // New Pause State
+                    timeRemainingWhenPaused: 0, // Store time when paused
+                    
                     lastEvent: 'created',
                     timestamp: Date.now(),
+                    
                     usedWords: [],
+                    
                     messages: [], 
                     players: {
                         [this.user.uid]: { nickname: nickname, role: 'host', team: null }
@@ -1246,12 +1314,10 @@
                 } catch(e) { console.error("Erro ao trocar time", e); }
             }
 
-            // NEW: KICK PLAYER
             async kickPlayer(targetUid) {
                 if (!this.roomId) return;
                 const roomRef = doc(db, 'mega_senha_sessions', this.roomId);
                 try {
-                    // Remove from everything
                     await updateDoc(roomRef, {
                         [`players.${targetUid}`]: deleteField(),
                         "teams.red": arrayRemove(targetUid),
@@ -1267,7 +1333,9 @@
                     if (doc.exists() && this.onStateChange) {
                         this.onStateChange(doc.data());
                     }
-                }, (error) => { console.error("Erro no listener:", error); });
+                }, (error) => {
+                    console.error("Erro no listener:", error);
+                });
             }
 
             async updateState(newData) {
@@ -1281,7 +1349,6 @@
                 }
             }
             
-            // NEW: REACTION LOGIC (FULL REWRITE OF MESSAGES FOR SIMPLICITY)
             async updateMessages(messages) {
                  if (!this.roomId) return;
                 const roomRef = doc(db, 'mega_senha_sessions', this.roomId);
@@ -1294,12 +1361,12 @@
                 if (!this.roomId) return;
                 const roomRef = doc(db, 'mega_senha_sessions', this.roomId);
                 const msg = {
-                    id: Date.now() + Math.random().toString(), // Unique ID for reactions
+                    id: Date.now() + Math.random().toString(), 
                     sender: nickname,
                     text: text,
                     uid: this.user.uid,
                     timestamp: Date.now(),
-                    reactions: {} // { emoji: [uids] }
+                    reactions: {} 
                 };
                 try {
                     await updateDoc(roomRef, {
@@ -1313,9 +1380,17 @@
          * AUDIO
          */
         class AudioController {
-            constructor() { this.enabled = true; this.ctx = null; }
+            constructor() { 
+                this.ctx = null; 
+                const saved = localStorage.getItem('ms_sound_enabled');
+                this.enabled = saved === null ? true : (saved === 'true');
+            }
             init() { if (!this.ctx) { const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC(); } }
-            toggle() { this.enabled = !this.enabled; return this.enabled; }
+            toggle() { 
+                this.enabled = !this.enabled; 
+                localStorage.setItem('ms_sound_enabled', this.enabled);
+                return this.enabled; 
+            }
             play(type) {
                 if (!this.enabled) return;
                 try {
@@ -1386,6 +1461,7 @@
                 this.hostStartPanel = document.getElementById('host-start-panel');
                 this.waitingMsg = document.getElementById('waiting-msg');
                 this.shareUrlInput = document.getElementById('share-url');
+                this.rulesModal = document.getElementById('rules-modal');
                 
                 // Game Elements
                 this.scoreRed = document.getElementById('score-red');
@@ -1407,6 +1483,7 @@
                 this.hostIntroControls = document.getElementById('host-intro-controls');
                 this.btnSwapGame = document.getElementById('btn-swap-game');
                 this.btnPauseGame = document.getElementById('btn-pause-game');
+                this.btnResumeOverlay = document.getElementById('btn-resume-overlay');
 
                 // Chat
                 this.chatBtn = document.getElementById('btn-toggle-chat');
@@ -1449,21 +1526,24 @@
             togglePauseOverlay(show) { 
                 show ? document.getElementById('pause-overlay').classList.add('active') : document.getElementById('pause-overlay').classList.remove('active'); 
             }
+            
+            toggleRules(show) {
+                show ? this.rulesModal.classList.add('active') : this.rulesModal.classList.remove('active');
+            }
 
             showScreen(screenName) {
                 Object.values(this.screens).forEach(el => el.classList.remove('active'));
                 this.screens[screenName].classList.add('active');
                 if (screenName === 'menu') {
                     this.sidebar.classList.add('hidden-sidebar');
-                    this.chatBtn.classList.add('hidden'); // Hide chat on menu
+                    this.chatBtn.classList.add('hidden'); 
                     this.chatWindow.classList.remove('open');
                 } else {
                     this.sidebar.classList.remove('hidden-sidebar');
-                    this.chatBtn.classList.remove('hidden'); // Show chat
+                    this.chatBtn.classList.remove('hidden'); 
                 }
             }
 
-            // CHAT UI
             toggleChat() {
                 this.chatOpen = !this.chatOpen;
                 if (this.chatOpen) {
@@ -1492,14 +1572,12 @@
                     }
                 }
                 
-                // Always re-render to update reactions
                 this.chatBody.innerHTML = '';
                 messages.forEach(msg => {
                     const el = document.createElement('div');
                     const isMine = msg.uid === myUid;
                     el.className = `chat-message ${isMine ? 'mine' : ''}`;
                     
-                    // REACTION RENDERING
                     let reactionsHTML = '';
                     if (msg.reactions) {
                         reactionsHTML = `<div class="chat-reactions">`;
@@ -1517,11 +1595,10 @@
                         ${reactionsHTML}
                     `;
                     
-                    // Click to react
                     el.onclick = (e) => {
                         this.activeMsgForReaction = msg.id;
                         this.reactionMenu.style.top = (e.clientY - 50) + 'px';
-                        this.reactionMenu.style.left = (e.clientX - 100) + 'px'; // simple positioning
+                        this.reactionMenu.style.left = (e.clientX - 100) + 'px'; 
                         this.reactionMenu.classList.remove('hidden');
                         e.stopPropagation();
                     };
@@ -1529,7 +1606,6 @@
                     this.chatBody.appendChild(el);
                 });
                 
-                // Auto scroll only if new messages added
                 if (messages.length > this.lastMsgCount && this.chatOpen) {
                     this.chatBody.scrollTop = this.chatBody.scrollHeight;
                 }
@@ -1581,20 +1657,15 @@
                     if (roleLabel === 'Dica') badgeClass += ' giver';
                     else if (roleLabel === 'Chute') badgeClass += ' guesser';
                     
-                    // --- TEAM SWITCH BUTTONS + KICK ---
                     let actions = '';
-                    if (isHost && uid !== currentUserId) { // Cannot kick self or move self easily (optional)
-                         // KICK BUTTON
+                    if (isHost && uid !== currentUserId) {
                          actions += `<button class="action-icon-btn btn-kick" data-uid="${uid}" title="Expulsar">👢</button>`;
                          
                         if (teams.red.includes(uid)) {
-                            // Move Red -> Blue
                             actions += `<button class="btn-move-team" data-uid="${uid}" data-target="blue" title="Mover para Azul">⇄</button>`;
                         } else if (teams.blue.includes(uid)) {
-                            // Move Blue -> Red
                             actions += `<button class="btn-move-team" data-uid="${uid}" data-target="red" title="Mover para Vermelho">⇄</button>`;
                         } else {
-                            // Lobby -> Red/Blue 
                             actions += `
                                 <div style="display:flex; gap:2px;">
                                     <button class="btn-move-team" data-uid="${uid}" data-target="red" title="Mover para Vermelho" style="color:var(--team-red)">R</button>
@@ -1648,9 +1719,11 @@
                     this.btnSwapGame.classList.remove('hidden');
                     this.btnPauseGame.classList.remove('hidden');
                     this.btnPauseGame.textContent = state.isPaused ? "▶" : "⏸";
+                    this.btnResumeOverlay.classList.remove('hidden');
                 } else {
                     this.btnSwapGame.classList.add('hidden');
                     this.btnPauseGame.classList.add('hidden');
+                    this.btnResumeOverlay.classList.add('hidden');
                 }
 
                 const isGiver = state.activePair.giver === currentUserId;
@@ -1705,14 +1778,6 @@
                 if (isHost) this.hostIntroControls.classList.remove('hidden');
                 else this.hostIntroControls.classList.add('hidden');
             }
-            
-            updateResult(state, isHost) {
-                 if(this.net?.isHost) { // this.net is not here, logic moved
-                 }
-                 
-                 // Show auto transition msg
-                 document.getElementById('transition-timer').textContent = "5"; // reset
-            }
 
             updateTimer(seconds) {
                 this.elTimer.childNodes[0].nodeValue = Math.max(0, seconds) + ' '; 
@@ -1730,13 +1795,15 @@
                 this.net = new NetworkController();
                 this.net.onStateChange = (s) => this.handleState(s);
                 this.localTimer = null;
-                this.transitionTimer = null; // Auto Next Timer
+                this.transitionTimer = null;
                 this.lastProcessedEvent = 0;
                 this.bindEvents();
                 this.initNick();
                 this.checkUrlParams();
                 
-                // Reaction Event Listener
+                // Update sound button initial state
+                document.getElementById('btn-sound').textContent = this.audio.enabled ? '🔊 Sons Ligados' : '🔇 Sons Desligados';
+                
                 document.addEventListener('add-reaction', (e) => {
                     this.addReaction(e.detail.msgId, e.detail.reaction);
                 });
@@ -1758,7 +1825,7 @@
                 document.getElementById('btn-correct').onclick = () => this.actionCorrect();
                 document.getElementById('btn-quit').onclick = () => this.quit();
                 document.getElementById('btn-menu-return').onclick = () => this.quit();
-                // document.getElementById('btn-next-level').onclick = () => this.nextRound(); // Manual fallback removed as per error fix
+                
                 document.getElementById('btn-sound').onclick = (e) => {
                     const en = this.audio.toggle();
                     e.target.textContent = en ? '🔊 Sons Ligados' : '🔇 Sons Desligados';
@@ -1781,11 +1848,16 @@
                         setTimeout(() => document.getElementById('btn-copy-url').textContent = originalText, 2000);
                     });
                 };
+                
+                // RULES
+                document.getElementById('btn-open-rules').onclick = () => this.ui.toggleRules(true);
+                document.getElementById('btn-close-rules').onclick = () => this.ui.toggleRules(false);
 
                 // HOST CONTROLS
                 document.getElementById('btn-swap-intro').onclick = () => this.hostSwapRoles();
                 document.getElementById('btn-swap-game').onclick = () => this.hostSwapRoles();
                 document.getElementById('btn-pause-game').onclick = () => this.hostTogglePause(); 
+                document.getElementById('btn-resume-overlay').onclick = () => this.hostTogglePause();
 
                 // CHAT EVENTS
                 document.getElementById('btn-toggle-chat').onclick = () => this.ui.toggleChat();
@@ -1796,14 +1868,16 @@
                 };
                 document.getElementById('btn-emoji-picker').onclick = () => this.ui.toggleEmojiPicker();
                 
-                // CLOSE MENUS ON CLICK OUTSIDE
                 document.addEventListener('click', (e) => {
                     if (!e.target.closest('.reaction-menu') && !e.target.closest('.chat-message')) {
                         document.getElementById('reaction-menu').classList.add('hidden');
                     }
+                    if (!e.target.closest('.emoji-picker') && !e.target.closest('#btn-emoji-picker')) {
+                         document.getElementById('emoji-picker').classList.add('hidden');
+                    }
                 });
 
-                // SIDEBAR DELEGATION (TEAM SWITCH & KICK)
+                // SIDEBAR DELEGATION
                 document.getElementById('participants-sidebar').onclick = (e) => {
                     const btn = e.target.closest('.action-icon-btn, .btn-move-team');
                     if (btn && this.net.isHost) {
@@ -1861,7 +1935,6 @@
                         if(!m.reactions[emoji]) m.reactions[emoji] = [];
                         
                         const uid = this.net.user.uid;
-                        // Toggle reaction
                         if(m.reactions[emoji].includes(uid)) {
                             m.reactions[emoji] = m.reactions[emoji].filter(u => u !== uid);
                         } else {
@@ -2096,7 +2169,6 @@
                 this.serverState = data;
                 const uid = this.net.user?.uid;
 
-                // KICK CHECK
                 if (uid && !data.players[uid] && this.net.roomId) {
                      alert("Você foi removido da sala.");
                      this.quit();
@@ -2139,7 +2211,6 @@
                 document.getElementById('waiting-room-code').textContent = this.net.roomId;
                 this.ui.togglePauseOverlay(data.isPaused && data.status === 'playing');
 
-                // CLEAR TIMERS
                 if(this.transitionTimer) clearInterval(this.transitionTimer);
 
                 if (data.status === 'waiting') {
@@ -2199,7 +2270,6 @@
                     title.style.color = isRed ? 'var(--team-red)' : 'var(--team-blue)';
                     msg.textContent = `Acertaram ${data.correctCount} palavras.`;
 
-                    // --- AUTOMATIC TRANSITION LOGIC ---
                     const transitionDisplay = document.getElementById('transition-timer');
                     let countdown = 5;
                     transitionDisplay.textContent = countdown;
@@ -2209,14 +2279,11 @@
                         transitionDisplay.textContent = countdown;
                         if (countdown <= 0) {
                             clearInterval(this.transitionTimer);
-                            // ONLY HOST TRIGGERS NEXT ROUND
                             if (this.net.isHost) {
                                 this.nextRound();
                             }
                         }
                     }, 1000);
-                    
-                    // Hide manual next button (if it existed), show return to menu
                     
                     this.ui.showScreen('result');
                 }
