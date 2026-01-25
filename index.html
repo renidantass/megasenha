@@ -131,7 +131,16 @@
         /**
          * GLOBAL CONFIG
          */
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const firebaseConfig =  {
+            apiKey: "AIzaSyDoaWmTN2513e5LGxOq--65ekL4PMqjUAs",
+            authDomain: "megasenha-c29ba.firebaseapp.com",
+            projectId: "megasenha-c29ba",
+            storageBucket: "megasenha-c29ba.firebasestorage.app",
+            messagingSenderId: "449328223327",
+            appId: "1:449328223327:web:89ddff46caf8594be4f7ea",
+            measurementId: "G-B2QYXF8ZFC"
+        };
+
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app';
         
         // Initialize Firebase
