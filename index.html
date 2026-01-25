@@ -500,6 +500,16 @@
             <div class="title-mega" style="font-size: 3rem;">SALA</div>
             <div id="waiting-room-code" class="room-badge" style="font-size: 2rem;">????</div>
         </div>
+        
+        <!-- NEW SHARE SECTION -->
+        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 20px; width: 100%; max-width: 400px;">
+            <p style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Link para convite</p>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="share-url" class="input-base" readonly style="font-size: 0.9rem; padding: 10px; margin: 0; text-align: left; color: #60a5fa;">
+                <button id="btn-copy-url" class="btn" style="background: #334155; min-width: 50px;">📋</button>
+            </div>
+        </div>
+
         <div class="menu-card hidden" id="host-start-panel">
             <p style="margin-bottom: 15px; color: #94a3b8;">Quando todos entrarem, clique abaixo para dividir times e começar.</p>
             <button id="btn-start-match" class="btn btn-start" style="background: linear-gradient(to right, #eab308, #ca8a04);">
@@ -971,6 +981,7 @@
                 this.loading = document.getElementById('loading-overlay');
                 this.hostStartPanel = document.getElementById('host-start-panel');
                 this.waitingMsg = document.getElementById('waiting-msg');
+                this.shareUrlInput = document.getElementById('share-url');
                 
                 // Game Elements
                 this.scoreRed = document.getElementById('score-red');
@@ -1059,7 +1070,7 @@
                 });
             }
 
-            updateLobby(isHost) {
+            updateLobby(isHost, roomId) {
                 if (isHost) {
                     this.hostStartPanel.classList.remove('hidden');
                     this.waitingMsg.classList.add('hidden');
@@ -1067,6 +1078,10 @@
                     this.hostStartPanel.classList.add('hidden');
                     this.waitingMsg.classList.remove('hidden');
                 }
+                
+                // Atualizar link de compartilhamento
+                const baseUrl = window.location.href.split('?')[0];
+                this.shareUrlInput.value = `${baseUrl}?code=${roomId}`;
             }
 
             updateGameUI(state, currentUserId) {
@@ -1164,6 +1179,15 @@
                 this.lastProcessedEvent = 0;
                 this.bindEvents();
                 this.initNick();
+                this.checkUrlParams(); // Check on init
+            }
+
+            checkUrlParams() {
+                const params = new URLSearchParams(window.location.search);
+                const code = params.get('code');
+                if (code) {
+                    document.getElementById('input-room-code').value = code.toUpperCase();
+                }
             }
 
             bindEvents() {
@@ -1187,6 +1211,18 @@
                 document.getElementById('btn-refresh-nick').onclick = () => {
                     const newNick = this.generateRandomNick();
                     document.getElementById('input-nickname').value = newNick;
+                };
+
+                // Copy Link Button
+                document.getElementById('btn-copy-url').onclick = () => {
+                    const input = document.getElementById('share-url');
+                    input.select();
+                    input.setSelectionRange(0, 99999); // Mobile
+                    navigator.clipboard.writeText(input.value).then(() => {
+                        const originalText = document.getElementById('btn-copy-url').textContent;
+                        document.getElementById('btn-copy-url').textContent = "Copiado!";
+                        setTimeout(() => document.getElementById('btn-copy-url').textContent = originalText, 2000);
+                    });
                 };
             }
 
@@ -1222,7 +1258,7 @@
                 this.ui.toggleLoading(true);
                 try {
                     await this.net.createRoom(nick);
-                    this.ui.updateLobby(true);
+                    this.ui.updateLobby(true, this.net.roomId);
                 } catch(e) { alert(e.message); }
                 this.ui.toggleLoading(false);
             }
@@ -1239,7 +1275,7 @@
                 try {
                     const ok = await this.net.joinRoom(code, nick);
                     if (!ok) alert("Sala não encontrada");
-                    else this.ui.updateLobby(false);
+                    else this.ui.updateLobby(false, code);
                 } catch(e) {
                     alert("Erro ao entrar: " + e.message);
                 } finally {
@@ -1430,8 +1466,8 @@
                 document.getElementById('waiting-room-code').textContent = this.net.roomId;
                 
                 if (data.status === 'waiting') {
-                    if(this.net.isHost) this.ui.updateLobby(true);
-                    else this.ui.updateLobby(false);
+                    if(this.net.isHost) this.ui.updateLobby(true, this.net.roomId);
+                    else this.ui.updateLobby(false, this.net.roomId);
                     this.ui.showScreen('waiting');
                     return;
                 }
