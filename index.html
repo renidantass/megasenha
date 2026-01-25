@@ -785,7 +785,7 @@
             }
 
             async updateState(newData) {
-                if (!this.isHost || !this.roomId) return;
+                if (!this.roomId) return;
                 const roomRef = doc(db, 'mega_senha_sessions', this.roomId);
                 await updateDoc(roomRef, { ...newData, timestamp: Date.now() });
             }
@@ -1216,6 +1216,7 @@
 
             actionCorrect() {
                 const s = this.serverState;
+                if (!s) return; // Add safety
                 const newCount = s.correctCount + 1;
                 const newIdx = s.currentWordIndex + 1;
 
@@ -1242,6 +1243,7 @@
 
             actionPass() {
                 const s = this.serverState;
+                if (!s) return; // Add safety
                 const words = [...s.words];
                 words.push(words[s.currentWordIndex]); // Cycle
                 this.net.updateState({
