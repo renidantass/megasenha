@@ -20,6 +20,8 @@ export class GameEngine {
         this.lastProcessedEvent = 0;
         this.serverState = null;
         this.localLastTick = 0;
+        this.stateUpdateQueue = null;
+        this.stateUpdateTimer = null;
         
         this.bindEvents();
         this.initNick();
@@ -31,7 +33,8 @@ export class GameEngine {
             this.addReaction(e.detail.msgId, e.detail.reaction);
         });
 
-        this.net.cleanupOldRooms().catch(err => console.warn("Ocorreu um erro ao limpar as salas!"));
+        // ⚠️ OTIMIZADO: Cleanup menos frequente
+        this.net.cleanupOldRooms().catch(err => console.warn("Erro ao limpar salas!"));
         window.addEventListener('beforeunload', () => this.net.leaveRoom());
     }
 
@@ -468,27 +471,23 @@ export class GameEngine {
         const nextWordIndex = this.serverState.currentWordIndex + 1;
         const correctCount = this.serverState.correctCount + 1;
 
-        // Preparar dados para atualizar
         const updateData = {
             correctCount: correctCount,
             currentWordIndex: nextWordIndex
         };
 
-        // Atualizar score usando spread para preservar a ordem
         const scores = { ...this.serverState.scores };
         scores[currentTeam] = newScore;
         updateData.scores = scores;
 
-        // Verificar se terminou a rodada
         if (nextWordIndex >= (this.serverState.words || []).length) {
-            // Fim da rodada
             updateData.status = 'result';
             updateData.lastEvent = 'round_end_' + Date.now();
             this.net.updateState(updateData);
             this.showResult(currentTeam, newScore);
         } else {
-            // Continuar com próxima palavra
             updateData.lastEvent = 'correct_' + Date.now();
+            // ⚠️ OTIMIZADO: updateState já faz debounce interno
             this.net.updateState(updateData);
         }
     }
@@ -496,31 +495,25 @@ export class GameEngine {
     async actionPass() {
         if (!this.serverState) return;
         
-        // Pegar a palavra atual
         const currentWordIndex = this.serverState.currentWordIndex;
         const currentWord = this.serverState.words[currentWordIndex];
         
-        // Criar novo array de palavras com a palavra atual movida para o final
         const words = [...this.serverState.words];
-        words.splice(currentWordIndex, 1); // Remove a palavra da posição atual
-        words.push(currentWord); // Adiciona no final
+        words.splice(currentWordIndex, 1);
+        words.push(currentWord);
         
-        // Preparar dados para atualizar
         const updateData = {
             words: words,
-            // O índice permanece o mesmo, pois a próxima palavra está na mesma posição
             lastEvent: 'pass_' + Date.now()
         };
 
-        // Verificar se ainda há palavras disponíveis
         if (words.length === 0) {
-            // Fim da rodada (não há mais palavras)
             updateData.status = 'result';
             updateData.lastEvent = 'round_end_' + Date.now();
             this.net.updateState(updateData);
             this.showResult(this.serverState.currentTurn, this.serverState.scores[this.serverState.currentTurn]);
         } else {
-            // Continuar com próxima palavra (que já está na posição currentWordIndex)
+            // ⚠️ OTIMIZADO: updateState já faz debounce interno
             this.net.updateState(updateData);
         }
     }

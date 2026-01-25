@@ -14,7 +14,11 @@ export class NetworkController {
         this.roomId = null;
         this.isHost = false;
         this.unsubscribe = null;
-        this.onStateChange = null; 
+        this.onStateChange = null;
+        this.updateQueue = [];
+        this.isUpdating = false;
+        this.lastUpdateTime = 0;
+        this.updateDebounceMs = 200; // Aguarda 200ms antes de enviar atualizações
     }
 
     async forceNewIdentity() {
@@ -28,39 +32,23 @@ export class NetworkController {
     async cleanupOldRooms() {
         const now = Date.now();
         const twoHoursAgo = now - (2 * 60 * 60 * 1000);
-        const sessionsRef = collection(this.db, 'mega_senha_sessions');
 
         try {
-            // Buscar TODAS as salas (sem filtro de status)
-            const snapshot = await getDocs(collection(this.db, 'mega_senha_sessions'));
+            // ⚠️ OTIMIZADO: Usar query com where para reduzir documentos lidos
+            const sessionsRef = collection(this.db, 'mega_senha_sessions');
+            const q = query(sessionsRef, where("timestamp", "<", twoHoursAgo));
             
+            const snapshot = await getDocs(q);
+            
+            // Deletar apenas salas antigas
             snapshot.forEach(async (roomDoc) => {
                 try {
-                    const data = roomDoc.data();
-                    const players = data.players || {};
-                    const playerCount = Object.keys(players).length;
-                    const timestamp = data.timestamp || 0;
-                    const isOld = now - timestamp > twoHoursAgo;
-
-                    // Deletar APENAS:
-                    // 1. Salas sem jogadores
-                    // 2. Salas antigas (mais de 2 horas) mesmo que tenham jogadores
-                    const shouldDelete = playerCount === 0 || isOld;
-
-                    if (shouldDelete) {
-                        console.log(`Deletando sala ${roomDoc.id}:`, {
-                            playerCount,
-                            isOld,
-                            reason: playerCount === 0 ? 'sem jogadores' : 'expirada'
-                        });
-                        await deleteDoc(doc(this.db, 'mega_senha_sessions', roomDoc.id));
-                    }
+                    await deleteDoc(doc(this.db, 'mega_senha_sessions', roomDoc.id));
+                    console.log(`Sala expirada ${roomDoc.id} deletada`);
                 } catch (docError) {
-                    console.warn(`Erro ao processar sala ${roomDoc.id} para cleanup:`, docError);
+                    console.warn(`Erro ao deletar ${roomDoc.id}:`, docError);
                 }
             });
-
-            console.log("Limpeza de salas concluída");
         } catch (e) {
             console.warn("Falha no cleanup:", e);
         }
@@ -273,24 +261,60 @@ export class NetworkController {
     subscribeToRoom(code) {
         if (this.unsubscribe) this.unsubscribe();
         const roomRef = doc(this.db, 'mega_senha_sessions', code);
-        this.unsubscribe = onSnapshot(roomRef, (doc) => {
-            if (doc.exists() && this.onStateChange) {
-                this.onStateChange(doc.data());
+        
+        // ⚠️ OTIMIZADO: Usar onSnapshotListener com options para reduzir updates
+        this.unsubscribe = onSnapshot(
+            roomRef,
+            { includeMetadataChanges: false }, // Ignora mudanças de metadata
+            (doc) => {
+                if (doc.exists() && this.onStateChange) {
+                    this.onStateChange(doc.data());
+                }
+            },
+            (error) => {
+                console.error("Erro no listener:", error);
             }
-        }, (error) => {
-            console.error("Erro no listener:", error);
-        });
+        );
     }
 
     async updateState(newData) {
         if (!this.roomId) return;
-        const roomRef = doc(this.db, 'mega_senha_sessions', this.roomId);
-        try {
-            await updateDoc(roomRef, { ...newData, timestamp: Date.now() });
-        } catch (e) {
-            console.error("ERRO UPDATE:", e);
-            if (e.code === 'permission-denied') alert("Erro de permissão no banco.");
-        }
+        
+        // Fila de atualizações para debouncing
+        this.updateQueue.push(newData);
+        
+        if (this.isUpdating) return;
+        
+        const now = Date.now();
+        const timeSinceLastUpdate = now - this.lastUpdateTime;
+        const waitTime = Math.max(0, this.updateDebounceMs - timeSinceLastUpdate);
+        
+        this.isUpdating = true;
+        
+        setTimeout(async () => {
+            if (this.updateQueue.length === 0) {
+                this.isUpdating = false;
+                return;
+            }
+            
+            // Mesclar todas as atualizações da fila
+            const mergedData = this.updateQueue.reduce((acc, update) => {
+                return { ...acc, ...update };
+            }, {});
+            
+            this.updateQueue = [];
+            
+            const roomRef = doc(this.db, 'mega_senha_sessions', this.roomId);
+            try {
+                await updateDoc(roomRef, { ...mergedData, timestamp: Date.now() });
+                this.lastUpdateTime = Date.now();
+            } catch (e) {
+                console.error("ERRO UPDATE:", e);
+                if (e.code === 'permission-denied') alert("Erro de permissão no banco.");
+            } finally {
+                this.isUpdating = false;
+            }
+        }, waitTime);
     }
     
     async updateMessages(messages) {

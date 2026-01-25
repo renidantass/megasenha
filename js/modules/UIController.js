@@ -60,6 +60,10 @@ export class UIController {
         this.roomListContainer = document.getElementById('rooms-list-container');
         
         this.initEmojiPicker();
+        
+        this.lastRenderedState = null;
+        this.lastRenderedMessages = [];
+        this.messageRenderCache = new Map();
     }
     
     initEmojiPicker() {
@@ -147,6 +151,14 @@ export class UIController {
     renderChat(messages, myUid) {
         if (!messages) return;
         
+        // ⚠️ OTIMIZADO: Comparar hash de mensagens para evitar re-render
+        const messageHash = JSON.stringify(messages);
+        if (messageHash === this.lastRenderedMessages && this.chatBody.children.length > 0) {
+            return; // Sem mudanças, não re-renderiza
+        }
+        this.lastRenderedMessages = messageHash;
+        
+        // Badge de não lidas
         if (messages.length > this.lastMsgCount) {
             if (!this.chatOpen) {
                 const unread = parseInt(this.chatBadge.textContent) + (messages.length - this.lastMsgCount);
@@ -155,17 +167,20 @@ export class UIController {
             }
         }
         
+        // ⚠️ OTIMIZADO: Apenas renderizar últimas 50 mensagens
+        const messagesToRender = messages.slice(-50);
         this.chatBody.innerHTML = '';
-        messages.forEach(msg => {
+        
+        messagesToRender.forEach(msg => {
             const el = document.createElement('div');
             const isMine = msg.uid === myUid;
             el.className = `chat-message ${isMine ? 'mine' : ''}`;
             
             let reactionsHTML = '';
-            if (msg.reactions) {
+            if (msg.reactions && Object.keys(msg.reactions).length > 0) {
                 reactionsHTML = `<div class="chat-reactions">`;
                 for (const [emoji, uids] of Object.entries(msg.reactions)) {
-                    if (uids.length > 0) {
+                    if (uids && uids.length > 0) {
                         reactionsHTML += `<span class="reaction-bubble">${emoji} ${uids.length}</span>`;
                     }
                 }
@@ -253,6 +268,17 @@ export class UIController {
     }
 
     updateSidebar(state, currentUserId, isHost) {
+        // ⚠️ OTIMIZADO: Comparar estado anterior para evitar re-render desnecessário
+        if (JSON.stringify(this.lastRenderedState) === JSON.stringify({
+            players: state.players,
+            teams: state.teams,
+            scores: state.scores,
+            activePair: state.activePair,
+            reserve: state.reserve
+        })) {
+            return; // Sem mudanças relevantes
+        }
+        
         // Limpar listas
         this.listRed.innerHTML = '';
         this.listBlue.innerHTML = '';
@@ -272,7 +298,6 @@ export class UIController {
         const guesserId = state.activePair?.guesser;
         const reserve = state.reserve;
 
-        // Iterar sobre players mantendo ordem original (não usar Object.keys().sort())
         const playerIds = Object.keys(players);
 
         playerIds.forEach(uid => {
@@ -338,6 +363,15 @@ export class UIController {
                 this.listLobby.appendChild(el);
             }
         });
+        
+        // Cachear o estado renderizado
+        this.lastRenderedState = {
+            players: state.players,
+            teams: state.teams,
+            scores: state.scores,
+            activePair: state.activePair,
+            reserve: state.reserve
+        };
     }
 
     updateLobby(isHost, roomId) {
