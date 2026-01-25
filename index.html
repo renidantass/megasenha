@@ -598,15 +598,26 @@
 
             async init() {
                 if (this.user) return;
+                
+                // Prioritize Custom Token (for seamless environments)
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     try {
                         const cred = await signInWithCustomToken(auth, __initial_auth_token);
                         this.user = cred.user;
+                        console.log("Autenticado com token");
                         return;
                     } catch (e) { console.warn("Fallback anonymous", e); }
                 }
-                const cred = await signInAnonymously(auth);
-                this.user = cred.user;
+                
+                // Fallback to Anonymous
+                try {
+                    const cred = await signInAnonymously(auth);
+                    this.user = cred.user;
+                    console.log("Autenticado anonimo");
+                } catch (e) { 
+                    console.error("Falha Auth:", e); 
+                    alert("Erro de autenticação. Verifique o console.");
+                }
             }
 
             reset() {
@@ -617,6 +628,8 @@
 
             async createRoom(nickname) {
                 await this.init();
+                if (!this.user) throw new Error("Não autenticado");
+                
                 const code = Math.random().toString(36).substring(2, 6).toUpperCase();
                 this.roomId = code;
                 this.isHost = true;
@@ -652,6 +665,8 @@
 
             async joinRoom(code, nickname) {
                 await this.init();
+                if (!this.user) throw new Error("Não autenticado");
+
                 const roomRef = doc(db, 'mega_senha_sessions', code);
                 const snap = await getDoc(roomRef);
 
@@ -674,6 +689,8 @@
                     if (doc.exists() && this.onStateChange) {
                         this.onStateChange(doc.data());
                     }
+                }, (error) => {
+                    console.error("Erro no listener:", error);
                 });
             }
 
@@ -693,32 +710,36 @@
             toggle() { this.enabled = !this.enabled; return this.enabled; }
             play(type) {
                 if (!this.enabled) return;
-                this.init(); 
-                const t = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.connect(gain); gain.connect(this.ctx.destination);
+                try {
+                    this.init(); 
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+                    
+                    const t = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain); gain.connect(this.ctx.destination);
 
-                switch (type) {
-                    case 'tick':
-                        osc.type = 'square'; osc.frequency.setValueAtTime(800, t);
-                        gain.gain.setValueAtTime(0.05, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
-                        osc.start(t); osc.stop(t + 0.05); break;
-                    case 'correct':
-                        osc.type = 'sine'; osc.frequency.setValueAtTime(800, t); osc.frequency.exponentialRampToValueAtTime(1200, t + 0.1);
-                        gain.gain.setValueAtTime(0.3, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
-                        osc.start(t); osc.stop(t + 0.5); break;
-                    case 'pass':
-                        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, t); osc.frequency.linearRampToValueAtTime(100, t + 0.3);
-                        gain.gain.setValueAtTime(0.2, t); gain.gain.linearRampToValueAtTime(0.01, t + 0.3);
-                        osc.start(t); osc.stop(t + 0.3); break;
-                    case 'win':
-                        this._playChord([523.25, 659.25, 783.99, 1046.50]); break;
-                    case 'gameover':
-                        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, t); osc.frequency.linearRampToValueAtTime(100, t + 1);
-                        gain.gain.setValueAtTime(0.3, t); gain.gain.linearRampToValueAtTime(0.01, t + 1);
-                        osc.start(t); osc.stop(t + 1); break;
-                }
+                    switch (type) {
+                        case 'tick':
+                            osc.type = 'square'; osc.frequency.setValueAtTime(800, t);
+                            gain.gain.setValueAtTime(0.05, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+                            osc.start(t); osc.stop(t + 0.05); break;
+                        case 'correct':
+                            osc.type = 'sine'; osc.frequency.setValueAtTime(800, t); osc.frequency.exponentialRampToValueAtTime(1200, t + 0.1);
+                            gain.gain.setValueAtTime(0.3, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+                            osc.start(t); osc.stop(t + 0.5); break;
+                        case 'pass':
+                            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, t); osc.frequency.linearRampToValueAtTime(100, t + 0.3);
+                            gain.gain.setValueAtTime(0.2, t); gain.gain.linearRampToValueAtTime(0.01, t + 0.3);
+                            osc.start(t); osc.stop(t + 0.3); break;
+                        case 'win':
+                            this._playChord([523.25, 659.25, 783.99, 1046.50]); break;
+                        case 'gameover':
+                            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, t); osc.frequency.linearRampToValueAtTime(100, t + 1);
+                            gain.gain.setValueAtTime(0.3, t); gain.gain.linearRampToValueAtTime(0.01, t + 1);
+                            osc.start(t); osc.stop(t + 1); break;
+                    }
+                } catch(e) { console.warn("Audio error", e); }
             }
             _playChord(freqs) {
                 const t = this.ctx.currentTime;
@@ -789,10 +810,15 @@
                 this.listBlue.innerHTML = '';
                 this.listLobby.innerHTML = '';
 
-                this.scoreRedSidebar.textContent = state.scores.red;
-                this.scoreBlueSidebar.textContent = state.scores.blue;
+                if (!state) return;
 
-                const players = state.players;
+                const scores = state.scores || { red: 0, blue: 0 };
+                const teams = state.teams || { red: [], blue: [] };
+                const players = state.players || {};
+
+                this.scoreRedSidebar.textContent = scores.red;
+                this.scoreBlueSidebar.textContent = scores.blue;
+
                 // Identify active pair
                 const giverId = state.activePair?.giver;
                 const guesserId = state.activePair?.guesser;
@@ -810,13 +836,13 @@
                     const el = document.createElement('div');
                     el.className = `participant-item ${isMe ? 'is-me' : ''} ${isActive ? 'active-turn' : ''}`;
                     el.innerHTML = `
-                        <span>${p.nickname}</span>
+                        <span>${p.nickname || '???'}</span>
                         ${roleLabel ? `<span class="role-badge">${roleLabel}</span>` : ''}
                     `;
 
-                    // Decide where to put
-                    if (state.teams.red.includes(uid)) this.listRed.appendChild(el);
-                    else if (state.teams.blue.includes(uid)) this.listBlue.appendChild(el);
+                    // Decide where to put - SAFELY
+                    if (teams.red && teams.red.includes(uid)) this.listRed.appendChild(el);
+                    else if (teams.blue && teams.blue.includes(uid)) this.listBlue.appendChild(el);
                     else this.listLobby.appendChild(el);
                 });
             }
@@ -832,6 +858,8 @@
             }
 
             updateGameUI(state, currentUserId) {
+                if (!state.scores) return; // safety
+
                 // Scoreboard
                 this.scoreRed.textContent = state.scores.red;
                 this.scoreBlue.textContent = state.scores.blue;
@@ -889,6 +917,8 @@
             }
             
             updateIntro(state) {
+                if (!state.activePair) return;
+                
                 const isRed = state.currentTurn === 'red';
                 const color = isRed ? "var(--team-red)" : "var(--team-blue)";
                 const teamName = isRed ? "VERMELHO" : "AZUL";
@@ -945,6 +975,8 @@
             }
 
             async createGame() {
+                this.net.reset();
+                this.serverState = null;
                 const nick = this.getNick();
                 if (!nick) return;
                 this.ui.toggleLoading(true);
@@ -956,19 +988,28 @@
             }
 
             async joinGame() {
+                this.net.reset();
+                this.serverState = null;
                 const nick = this.getNick();
                 if (!nick) return;
                 const code = document.getElementById('input-room-code').value.trim().toUpperCase();
                 if (code.length !== 4) return alert("Código inválido");
                 
                 this.ui.toggleLoading(true);
-                const ok = await this.net.joinRoom(code, nick);
-                this.ui.toggleLoading(false);
-                if (!ok) alert("Sala não encontrada");
-                else this.ui.updateLobby(false);
+                try {
+                    const ok = await this.net.joinRoom(code, nick);
+                    if (!ok) alert("Sala não encontrada");
+                    else this.ui.updateLobby(false);
+                } catch(e) {
+                    alert("Erro ao entrar: " + e.message);
+                } finally {
+                    this.ui.toggleLoading(false);
+                }
             }
 
             async startMatch() {
+                if (!this.serverState || !this.serverState.players) return;
+                
                 // Logic to split teams
                 const players = Object.keys(this.serverState.players);
                 if (players.length < 2) return alert("Precisa de pelo menos 2 jogadores!");
@@ -1095,6 +1136,7 @@
             }
 
             handleState(data) {
+                if (!data) return; // safety check
                 this.serverState = data;
                 const uid = this.net.user?.uid;
 
