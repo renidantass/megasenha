@@ -130,8 +130,10 @@
 
         /**
          * GLOBAL CONFIG
+         * * IMPORTANTE: PARA DEPLOY (GITHUB PAGES, ETC)
+         * Substitua o objeto 'customConfig' abaixo com as suas credenciais do Firebase Console.
          */
-        const firebaseConfig =  {
+        const customConfig =  {
             apiKey: "AIzaSyDoaWmTN2513e5LGxOq--65ekL4PMqjUAs",
             authDomain: "megasenha-c29ba.firebaseapp.com",
             projectId: "megasenha-c29ba",
@@ -141,8 +143,26 @@
             measurementId: "G-B2QYXF8ZFC"
         };
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app';
-        
+        // Lógica de Seleção de Config (Ambiente vs Customizado)
+        let firebaseConfig;
+        try {
+            if (typeof __firebase_config !== 'undefined') {
+                firebaseConfig = JSON.parse(__firebase_config);
+            } else {
+                firebaseConfig = customConfig;
+            }
+        } catch (e) {
+            firebaseConfig = customConfig;
+        }
+
+        // Validação Simples para Alertar o Usuário
+        if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "SUA_API_KEY_AQUI") {
+            if (window.location.hostname !== 'localhost' && !window.location.hostname.includes('webcontainer')) {
+                console.error("ERRO CRÍTICO: Configuração do Firebase ausente.");
+                alert("ATENÇÃO: Para o jogo funcionar neste site, você precisa editar o arquivo HTML e preencher a variável 'customConfig' com suas chaves do Firebase.");
+            }
+        }
+
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -202,7 +222,7 @@
                     console.log("Autenticado anonimamente");
                 } catch (e) {
                     console.error("Falha crítica na autenticação:", e);
-                    throw new Error("Não foi possível conectar ao servidor de autenticação.");
+                    throw new Error("Não foi possível conectar ao servidor de autenticação. Verifique suas credenciais no código.");
                 }
             }
 
@@ -223,7 +243,8 @@
                 this.roomId = code;
                 this.isHost = true;
 
-                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'mega_senha_sessions', code);
+                // CAMINHO SIMPLIFICADO PARA HOSTING PRÓPRIO
+                const roomRef = doc(db, 'mega_senha_sessions', code);
                 
                 const initialState = {
                     hostId: this.user.uid,
@@ -244,7 +265,8 @@
 
             async joinRoom(code) {
                 await this.init();
-                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'mega_senha_sessions', code);
+                // CAMINHO SIMPLIFICADO
+                const roomRef = doc(db, 'mega_senha_sessions', code);
                 const snap = await getDoc(roomRef);
 
                 if (snap.exists()) {
@@ -259,7 +281,8 @@
             subscribeToRoom(code) {
                 if (this.unsubscribe) this.unsubscribe();
                 
-                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'mega_senha_sessions', code);
+                // CAMINHO SIMPLIFICADO
+                const roomRef = doc(db, 'mega_senha_sessions', code);
                 this.unsubscribe = onSnapshot(roomRef, (doc) => {
                     if (doc.exists() && this.onStateChange) {
                         this.onStateChange(doc.data());
@@ -269,7 +292,8 @@
 
             async updateState(newData) {
                 if (!this.isHost || !this.roomId) return;
-                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'mega_senha_sessions', this.roomId);
+                // CAMINHO SIMPLIFICADO
+                const roomRef = doc(db, 'mega_senha_sessions', this.roomId);
                 await updateDoc(roomRef, {
                     ...newData,
                     timestamp: Date.now()
