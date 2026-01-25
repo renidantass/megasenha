@@ -785,9 +785,23 @@
             }
 
             async updateState(newData) {
-                if (!this.roomId) return;
+                if (!this.roomId) {
+                    console.error("Tentativa de update sem roomId");
+                    return;
+                }
+                
                 const roomRef = doc(db, 'mega_senha_sessions', this.roomId);
-                await updateDoc(roomRef, { ...newData, timestamp: Date.now() });
+                
+                try {
+                    await updateDoc(roomRef, { ...newData, timestamp: Date.now() });
+                } catch (e) {
+                    console.error("ERRO AO ATUALIZAR ESTADO:", e);
+                    if (e.code === 'permission-denied') {
+                        alert("ERRO DE PERMISSÃO: O Firestore bloqueou a escrita. Verifique se as Regras de Segurança no Firebase Console permitem escrita para todos ('allow read, write: if request.auth != null;').");
+                    } else {
+                        alert("Erro de conexão ao enviar jogada: " + e.message);
+                    }
+                }
             }
         }
 
@@ -1214,9 +1228,12 @@
                 );
             }
 
-            actionCorrect() {
+            async actionCorrect() {
                 const s = this.serverState;
                 if (!s) return; // Add safety
+                
+                console.log("Ação Acertar Iniciada. Turno:", s.currentTurn);
+                
                 const newCount = s.correctCount + 1;
                 const newIdx = s.currentWordIndex + 1;
 
@@ -1225,32 +1242,44 @@
                 const newScores = { ...s.scores };
                 newScores[scoreKey]++;
 
-                if (newCount >= GameData.WORDS_PER_ROUND) {
-                    this.net.updateState({
-                        scores: newScores,
-                        status: 'result',
-                        lastEvent: 'win_' + Date.now()
-                    });
-                } else {
-                    this.net.updateState({
-                        scores: newScores,
-                        correctCount: newCount,
-                        currentWordIndex: newIdx,
-                        lastEvent: 'correct_' + Date.now()
-                    });
+                try {
+                    if (newCount >= GameData.WORDS_PER_ROUND) {
+                        await this.net.updateState({
+                            scores: newScores,
+                            status: 'result',
+                            lastEvent: 'win_' + Date.now()
+                        });
+                    } else {
+                        await this.net.updateState({
+                            scores: newScores,
+                            correctCount: newCount,
+                            currentWordIndex: newIdx,
+                            lastEvent: 'correct_' + Date.now()
+                        });
+                    }
+                } catch (e) {
+                    console.error("Falha ao enviar ação acertar:", e);
                 }
             }
 
-            actionPass() {
+            async actionPass() {
                 const s = this.serverState;
                 if (!s) return; // Add safety
+                
+                console.log("Ação Pular Iniciada.");
+                
                 const words = [...s.words];
                 words.push(words[s.currentWordIndex]); // Cycle
-                this.net.updateState({
-                    words: words,
-                    currentWordIndex: s.currentWordIndex + 1,
-                    lastEvent: 'pass_' + Date.now()
-                });
+                
+                try {
+                    await this.net.updateState({
+                        words: words,
+                        currentWordIndex: s.currentWordIndex + 1,
+                        lastEvent: 'pass_' + Date.now()
+                    });
+                } catch (e) {
+                    console.error("Falha ao enviar ação pular:", e);
+                }
             }
 
             quit() {
