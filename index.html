@@ -84,7 +84,7 @@
             max-height: 40vh;
             overflow-y: auto;
             transition: transform 0.3s ease, opacity 0.3s ease;
-            z-index: 40; /* Lower than chat */
+            z-index: 40; 
             box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
         }
         
@@ -107,7 +107,7 @@
                 flex-direction: column;
                 flex-wrap: nowrap;
                 max-height: 90vh;
-                min-width: 220px;
+                min-width: 240px;
                 width: auto;
             }
             #participants-sidebar.hidden-sidebar {
@@ -177,6 +177,62 @@
         .role-badge.guesser { color: #4ade80; border-color: #4ade80; }
         .role-badge.host { color: #60a5fa; border-color: #60a5fa; font-weight: bold; }
 
+        .action-icon-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .action-icon-btn:hover { background: rgba(255,255,255,0.2); }
+        .btn-kick { color: #ef4444; border-color: #ef4444; }
+        .btn-kick:hover { background: rgba(239, 68, 68, 0.2); }
+        
+        .btn-move-team {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-move-team:hover { background: rgba(255,255,255,0.2); }
+
+
+        /* --- PAUSE OVERLAY --- */
+        .pause-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .pause-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
         /* --- CHAT SYSTEM --- */
         .chat-btn-float {
             position: fixed;
@@ -222,7 +278,7 @@
             bottom: 90px;
             right: 20px;
             width: 320px;
-            height: 400px;
+            height: 450px;
             background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -272,7 +328,11 @@
             font-size: 0.9rem;
             word-wrap: break-word;
             align-self: flex-start;
+            position: relative;
+            cursor: pointer;
         }
+        .chat-message:hover { filter: brightness(1.1); }
+        
         .chat-message.mine {
             background: var(--primary-color);
             color: white;
@@ -290,11 +350,27 @@
             display: block;
         }
 
+        .chat-reactions {
+            display: flex;
+            gap: 2px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        .reaction-bubble {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+        }
+
         .chat-footer {
             padding: 10px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             gap: 8px;
+            position: relative;
         }
 
         .chat-input {
@@ -308,6 +384,16 @@
         }
         .chat-input:focus { border-color: var(--primary-color); }
 
+        .chat-icon-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+        .chat-icon-btn:hover { color: white; }
+
         .chat-send-btn {
             background: transparent;
             border: none;
@@ -315,6 +401,44 @@
             font-weight: bold;
             cursor: pointer;
             padding: 0 10px;
+        }
+
+        /* EMOJI PICKER */
+        .emoji-picker {
+            position: absolute;
+            bottom: 60px;
+            left: 10px;
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 12px;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 101;
+        }
+        .emoji-btn {
+            font-size: 1.5rem;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .emoji-btn:hover { background: rgba(255,255,255,0.1); }
+
+        /* REACTION PICKER */
+        .reaction-menu {
+            position: absolute;
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 20px;
+            padding: 5px;
+            display: flex;
+            gap: 5px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            z-index: 102;
         }
 
         /* Mobile Chat Override */
@@ -331,6 +455,10 @@
             .chat-btn-float {
                 bottom: 15px;
                 right: 15px;
+            }
+            .emoji-picker {
+                grid-template-columns: repeat(8, 1fr);
+                width: 95%;
             }
         }
 
@@ -558,7 +686,12 @@
         .btn-close { background: transparent; color: #94a3b8; padding: 10px; font-size: 1.5rem; }
         .btn-close:hover { color: white; background: rgba(255,255,255,0.1); border-radius: 50%; }
         
-        /* Host swap button */
+        /* Host swap & pause button */
+        .host-btns {
+            display: flex;
+            gap: 5px;
+        }
+
         .btn-swap {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.3);
@@ -608,6 +741,13 @@
     <!-- === LOADING OVERLAY === -->
     <div id="loading-overlay" class="hidden">Conectando...</div>
 
+    <!-- === PAUSE OVERLAY === -->
+    <div id="pause-overlay" class="pause-overlay">
+        <div style="font-size: 4rem; margin-bottom: 20px;">⏸</div>
+        <div>JOGO PAUSADO</div>
+        <p style="font-size: 1rem; color: #94a3b8; margin-top: 10px;">Aguardando o Host...</p>
+    </div>
+
     <!-- === SIDEBAR: PARTICIPANTES === -->
     <div id="participants-sidebar" class="hidden-sidebar">
         <!-- Team RED -->
@@ -648,8 +788,22 @@
             <!-- Messages go here -->
         </div>
         <div class="chat-footer">
+            <button id="btn-emoji-picker" class="chat-icon-btn">😀</button>
             <input type="text" id="chat-input" class="chat-input" placeholder="Digite...">
             <button id="btn-send-chat" class="chat-send-btn">➤</button>
+        </div>
+        <!-- Emoji Picker Panel -->
+        <div id="emoji-picker" class="emoji-picker hidden">
+            <!-- Emojis injected via JS -->
+        </div>
+        <!-- Reaction Menu -->
+        <div id="reaction-menu" class="reaction-menu hidden">
+            <span class="emoji-btn" data-reaction="❤️">❤️</span>
+            <span class="emoji-btn" data-reaction="😂">😂</span>
+            <span class="emoji-btn" data-reaction="😮">😮</span>
+            <span class="emoji-btn" data-reaction="😢">😢</span>
+            <span class="emoji-btn" data-reaction="😡">😡</span>
+            <span class="emoji-btn" data-reaction="👍">👍</span>
         </div>
     </div>
 
@@ -739,7 +893,10 @@
         <div class="game-header">
             <div class="flex-center">
                 <button id="btn-quit" class="btn btn-close" title="Sair">✖</button>
-                <button id="btn-swap-game" class="btn btn-close hidden" title="Inverter Papéis (Host)">⇄</button>
+                <div class="host-btns">
+                    <button id="btn-pause-game" class="btn btn-close hidden" title="Pausar Jogo (Host)">⏸</button>
+                    <button id="btn-swap-game" class="btn btn-close hidden" title="Inverter Papéis (Host)">⇄</button>
+                </div>
                 <div class="scoreboard">
                     <div id="score-red" class="score-box red">0</div>
                     <div style="color: #475569;">x</div>
@@ -793,16 +950,15 @@
             <h2 id="result-title" style="font-size: 2rem; margin-bottom: 0.5rem;">FIM DA RODADA</h2>
             <p id="result-msg" style="color: #cbd5e1; margin-bottom: 2rem;">...</p>
             
-            <div id="host-result-actions">
-                <button id="btn-next-level" class="btn btn-start" style="background: var(--primary-color);">
-                    PRÓXIMA EQUIPE
-                </button>
-                <button id="btn-menu-return" class="btn btn-sound">
-                    Encerrar Jogo
-                </button>
+            <!-- AUTO TRANSITION UI -->
+            <div id="auto-transition-msg" style="margin-top: 15px; color: #eab308; font-weight: bold; animation: pulse 1s infinite;">
+                Próxima rodada em <span id="transition-timer">5</span>...
             </div>
-            <div id="client-result-msg" class="hidden waiting-text">
-                Aguardando o Host...
+            
+            <div id="host-result-actions">
+                <button id="btn-menu-return" class="btn btn-sound" style="margin-top: 15px;">
+                    Voltar ao Menu
+                </button>
             </div>
         </div>
     </div>
@@ -938,6 +1094,9 @@
             adj: ["Veloz", "Esperto", "Forte", "Sábio", "Feliz", "Bravo", "Mestre", "Ninja", "Super", "Mega", "Rápido", "Leal"],
             noun: ["Pato", "Urso", "Gato", "Lobo", "Leão", "Falcão", "Tigre", "Panda", "Raposa", "Dragão", "Tubarão", "Águia"]
         };
+        
+        const EMOJIS = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "🥲", "☺️", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🥸", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑", "🤠", "😈", "👿", "👹", "👺", "🤡", "💩", "👻", "💀", "☠️", "👽", "👾", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾"];
+
 
         /**
          * NETWORK
@@ -965,7 +1124,6 @@
                     return;
                 }
                 
-                // Prioritize Custom Token
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     try {
                         const cred = await signInWithCustomToken(auth, __initial_auth_token);
@@ -974,7 +1132,6 @@
                     } catch (e) { console.warn("Fallback anonymous", e); }
                 }
                 
-                // Fallback to Anonymous
                 try {
                     const cred = await signInAnonymously(auth);
                     this.user = cred.user;
@@ -1000,13 +1157,12 @@
 
                 const roomRef = doc(db, 'mega_senha_sessions', code);
                 
-                // Initial State
                 const initialState = {
                     hostId: this.user.uid,
                     status: 'waiting', 
                     scores: { red: 0, blue: 0 },
                     currentTurn: 'red', 
-                    teams: { red: [], blue: [] },
+                    teams: { red: [], blue: [] }, 
                     activePair: { giver: null, guesser: null },
                     correctCount: 0,
                     words: [],
@@ -1016,7 +1172,7 @@
                     lastEvent: 'created',
                     timestamp: Date.now(),
                     usedWords: [],
-                    messages: [], // CHAT MESSAGES
+                    messages: [], 
                     players: {
                         [this.user.uid]: { nickname: nickname, role: 'host', team: null }
                     }
@@ -1074,6 +1230,36 @@
                 } catch (e) { console.error("Erro ao promover host:", e); }
             }
 
+            async switchPlayerTeam(targetUid, targetTeam) {
+                if (!this.roomId) return;
+                const roomRef = doc(db, 'mega_senha_sessions', this.roomId);
+                try {
+                    const batch = {};
+                    batch["teams.red"] = arrayRemove(targetUid);
+                    batch["teams.blue"] = arrayRemove(targetUid);
+                    await updateDoc(roomRef, batch);
+                    if (targetTeam === 'red') {
+                        await updateDoc(roomRef, { "teams.red": arrayUnion(targetUid) });
+                    } else if (targetTeam === 'blue') {
+                        await updateDoc(roomRef, { "teams.blue": arrayUnion(targetUid) });
+                    }
+                } catch(e) { console.error("Erro ao trocar time", e); }
+            }
+
+            // NEW: KICK PLAYER
+            async kickPlayer(targetUid) {
+                if (!this.roomId) return;
+                const roomRef = doc(db, 'mega_senha_sessions', this.roomId);
+                try {
+                    // Remove from everything
+                    await updateDoc(roomRef, {
+                        [`players.${targetUid}`]: deleteField(),
+                        "teams.red": arrayRemove(targetUid),
+                        "teams.blue": arrayRemove(targetUid)
+                    });
+                } catch(e) { console.error("Erro ao kickar", e); }
+            }
+
             subscribeToRoom(code) {
                 if (this.unsubscribe) this.unsubscribe();
                 const roomRef = doc(db, 'mega_senha_sessions', code);
@@ -1094,16 +1280,26 @@
                     if (e.code === 'permission-denied') alert("Erro de permissão no banco.");
                 }
             }
+            
+            // NEW: REACTION LOGIC (FULL REWRITE OF MESSAGES FOR SIMPLICITY)
+            async updateMessages(messages) {
+                 if (!this.roomId) return;
+                const roomRef = doc(db, 'mega_senha_sessions', this.roomId);
+                try {
+                    await updateDoc(roomRef, { messages: messages });
+                } catch(e) { console.error("Chat Reaction Error:", e); }
+            }
 
-            // CHAT FUNCTIONALITY
             async sendChatMessage(text, nickname) {
                 if (!this.roomId) return;
                 const roomRef = doc(db, 'mega_senha_sessions', this.roomId);
                 const msg = {
+                    id: Date.now() + Math.random().toString(), // Unique ID for reactions
                     sender: nickname,
                     text: text,
                     uid: this.user.uid,
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    reactions: {} // { emoji: [uids] }
                 };
                 try {
                     await updateDoc(roomRef, {
@@ -1207,20 +1403,52 @@
                 this.hostResultActions = document.getElementById('host-result-actions');
                 this.clientResultMsg = document.getElementById('client-result-msg');
                 
-                // Host Swap Controls
+                // Host Swap & Pause Controls
                 this.hostIntroControls = document.getElementById('host-intro-controls');
                 this.btnSwapGame = document.getElementById('btn-swap-game');
+                this.btnPauseGame = document.getElementById('btn-pause-game');
 
                 // Chat
                 this.chatBtn = document.getElementById('btn-toggle-chat');
                 this.chatWindow = document.getElementById('chat-window');
                 this.chatBody = document.getElementById('chat-body');
                 this.chatBadge = document.getElementById('chat-badge');
+                this.chatInput = document.getElementById('chat-input');
+                this.emojiPicker = document.getElementById('emoji-picker');
+                this.reactionMenu = document.getElementById('reaction-menu');
                 this.chatOpen = false;
                 this.lastMsgCount = 0;
+                this.activeMsgForReaction = null;
+                
+                this.initEmojiPicker();
+            }
+            
+            initEmojiPicker() {
+                this.emojiPicker.innerHTML = EMOJIS.map(e => `<button class="emoji-btn">${e}</button>`).join('');
+                this.emojiPicker.onclick = (e) => {
+                    if (e.target.classList.contains('emoji-btn')) {
+                        this.chatInput.value += e.target.textContent;
+                        this.emojiPicker.classList.add('hidden');
+                    }
+                };
+                
+                // REACTION HANDLER
+                this.reactionMenu.onclick = (e) => {
+                     if (e.target.classList.contains('emoji-btn')) {
+                         const reaction = e.target.getAttribute('data-reaction');
+                         const event = new CustomEvent('add-reaction', { detail: { msgId: this.activeMsgForReaction, reaction: reaction } });
+                         document.dispatchEvent(event);
+                         this.reactionMenu.classList.add('hidden');
+                         this.activeMsgForReaction = null;
+                     }
+                };
             }
 
             toggleLoading(show) { show ? this.loading.classList.remove('hidden') : this.loading.classList.add('hidden'); }
+            
+            togglePauseOverlay(show) { 
+                show ? document.getElementById('pause-overlay').classList.add('active') : document.getElementById('pause-overlay').classList.remove('active'); 
+            }
 
             showScreen(screenName) {
                 Object.values(this.screens).forEach(el => el.classList.remove('active'));
@@ -1240,19 +1468,22 @@
                 this.chatOpen = !this.chatOpen;
                 if (this.chatOpen) {
                     this.chatWindow.classList.add('open');
-                    this.chatBadge.classList.add('hidden'); // Hide badge
+                    this.chatBadge.classList.add('hidden'); 
                     this.chatBadge.textContent = '0';
-                    // Scroll to bottom
                     this.chatBody.scrollTop = this.chatBody.scrollHeight;
                 } else {
                     this.chatWindow.classList.remove('open');
+                    this.emojiPicker.classList.add('hidden');
                 }
+            }
+            
+            toggleEmojiPicker() {
+                this.emojiPicker.classList.toggle('hidden');
             }
 
             renderChat(messages, myUid) {
                 if (!messages) return;
                 
-                // Check if new messages arrived
                 if (messages.length > this.lastMsgCount) {
                     if (!this.chatOpen) {
                         const unread = parseInt(this.chatBadge.textContent) + (messages.length - this.lastMsgCount);
@@ -1261,28 +1492,51 @@
                     }
                 }
                 
-                // Only re-render if count changed to avoid flickering
-                if (messages.length === this.lastMsgCount) return;
-                
+                // Always re-render to update reactions
                 this.chatBody.innerHTML = '';
                 messages.forEach(msg => {
                     const el = document.createElement('div');
                     const isMine = msg.uid === myUid;
                     el.className = `chat-message ${isMine ? 'mine' : ''}`;
+                    
+                    // REACTION RENDERING
+                    let reactionsHTML = '';
+                    if (msg.reactions) {
+                        reactionsHTML = `<div class="chat-reactions">`;
+                        for (const [emoji, uids] of Object.entries(msg.reactions)) {
+                            if (uids.length > 0) {
+                                reactionsHTML += `<span class="reaction-bubble">${emoji} ${uids.length}</span>`;
+                            }
+                        }
+                        reactionsHTML += `</div>`;
+                    }
+
                     el.innerHTML = `
                         <span class="chat-sender">${isMine ? 'Você' : msg.sender}</span>
                         ${msg.text}
+                        ${reactionsHTML}
                     `;
+                    
+                    // Click to react
+                    el.onclick = (e) => {
+                        this.activeMsgForReaction = msg.id;
+                        this.reactionMenu.style.top = (e.clientY - 50) + 'px';
+                        this.reactionMenu.style.left = (e.clientX - 100) + 'px'; // simple positioning
+                        this.reactionMenu.classList.remove('hidden');
+                        e.stopPropagation();
+                    };
+
                     this.chatBody.appendChild(el);
                 });
                 
-                this.lastMsgCount = messages.length;
-                if (this.chatOpen) {
+                // Auto scroll only if new messages added
+                if (messages.length > this.lastMsgCount && this.chatOpen) {
                     this.chatBody.scrollTop = this.chatBody.scrollHeight;
                 }
+                this.lastMsgCount = messages.length;
             }
 
-            updateSidebar(state, currentUserId) {
+            updateSidebar(state, currentUserId, isHost) {
                 this.listRed.innerHTML = '';
                 this.listBlue.innerHTML = '';
                 this.listLobby.innerHTML = '';
@@ -1327,7 +1581,30 @@
                     if (roleLabel === 'Dica') badgeClass += ' giver';
                     else if (roleLabel === 'Chute') badgeClass += ' guesser';
                     
-                    el.innerHTML = `<span>${p.nickname || '???'}</span>${roleLabel ? `<span class="${badgeClass}">${roleLabel}</span>` : ''}`;
+                    // --- TEAM SWITCH BUTTONS + KICK ---
+                    let actions = '';
+                    if (isHost && uid !== currentUserId) { // Cannot kick self or move self easily (optional)
+                         // KICK BUTTON
+                         actions += `<button class="action-icon-btn btn-kick" data-uid="${uid}" title="Expulsar">👢</button>`;
+                         
+                        if (teams.red.includes(uid)) {
+                            // Move Red -> Blue
+                            actions += `<button class="btn-move-team" data-uid="${uid}" data-target="blue" title="Mover para Azul">⇄</button>`;
+                        } else if (teams.blue.includes(uid)) {
+                            // Move Blue -> Red
+                            actions += `<button class="btn-move-team" data-uid="${uid}" data-target="red" title="Mover para Vermelho">⇄</button>`;
+                        } else {
+                            // Lobby -> Red/Blue 
+                            actions += `
+                                <div style="display:flex; gap:2px;">
+                                    <button class="btn-move-team" data-uid="${uid}" data-target="red" title="Mover para Vermelho" style="color:var(--team-red)">R</button>
+                                    <button class="btn-move-team" data-uid="${uid}" data-target="blue" title="Mover para Azul" style="color:var(--team-blue)">B</button>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    el.innerHTML = `<span>${p.nickname || '???'}</span><div style="display:flex; align-items:center; gap:5px;">${roleLabel ? `<span class="${badgeClass}">${roleLabel}</span>` : ''}${actions}</div>`;
 
                     if (teams.red && teams.red.includes(uid)) this.listRed.appendChild(el);
                     else if (teams.blue && teams.blue.includes(uid)) this.listBlue.appendChild(el);
@@ -1367,9 +1644,14 @@
                     this.wordCard.className = "word-card turn-blue";
                 }
 
-                // Show/Hide Host Swap Button
-                if (isHost) this.btnSwapGame.classList.remove('hidden');
-                else this.btnSwapGame.classList.add('hidden');
+                if (isHost) {
+                    this.btnSwapGame.classList.remove('hidden');
+                    this.btnPauseGame.classList.remove('hidden');
+                    this.btnPauseGame.textContent = state.isPaused ? "▶" : "⏸";
+                } else {
+                    this.btnSwapGame.classList.add('hidden');
+                    this.btnPauseGame.classList.add('hidden');
+                }
 
                 const isGiver = state.activePair.giver === currentUserId;
                 const isGuesser = state.activePair.guesser === currentUserId;
@@ -1420,9 +1702,16 @@
                 document.getElementById('intro-giver').textContent = giverName;
                 document.getElementById('intro-guesser').textContent = guesserName;
 
-                // Show/Hide Host Swap Control
                 if (isHost) this.hostIntroControls.classList.remove('hidden');
                 else this.hostIntroControls.classList.add('hidden');
+            }
+            
+            updateResult(state, isHost) {
+                 if(this.net?.isHost) { // this.net is not here, logic moved
+                 }
+                 
+                 // Show auto transition msg
+                 document.getElementById('transition-timer').textContent = "5"; // reset
             }
 
             updateTimer(seconds) {
@@ -1441,10 +1730,16 @@
                 this.net = new NetworkController();
                 this.net.onStateChange = (s) => this.handleState(s);
                 this.localTimer = null;
+                this.transitionTimer = null; // Auto Next Timer
                 this.lastProcessedEvent = 0;
                 this.bindEvents();
                 this.initNick();
                 this.checkUrlParams();
+                
+                // Reaction Event Listener
+                document.addEventListener('add-reaction', (e) => {
+                    this.addReaction(e.detail.msgId, e.detail.reaction);
+                });
             }
 
             checkUrlParams() {
@@ -1463,7 +1758,7 @@
                 document.getElementById('btn-correct').onclick = () => this.actionCorrect();
                 document.getElementById('btn-quit').onclick = () => this.quit();
                 document.getElementById('btn-menu-return').onclick = () => this.quit();
-                document.getElementById('btn-next-level').onclick = () => this.nextRound();
+                // document.getElementById('btn-next-level').onclick = () => this.nextRound(); // Manual fallback removed as per error fix
                 document.getElementById('btn-sound').onclick = (e) => {
                     const en = this.audio.toggle();
                     e.target.textContent = en ? '🔊 Sons Ligados' : '🔇 Sons Desligados';
@@ -1487,9 +1782,10 @@
                     });
                 };
 
-                // HOST SWAP EVENTS
+                // HOST CONTROLS
                 document.getElementById('btn-swap-intro').onclick = () => this.hostSwapRoles();
                 document.getElementById('btn-swap-game').onclick = () => this.hostSwapRoles();
+                document.getElementById('btn-pause-game').onclick = () => this.hostTogglePause(); 
 
                 // CHAT EVENTS
                 document.getElementById('btn-toggle-chat').onclick = () => this.ui.toggleChat();
@@ -1497,6 +1793,28 @@
                 document.getElementById('btn-send-chat').onclick = () => this.sendChat();
                 document.getElementById('chat-input').onkeypress = (e) => {
                     if (e.key === 'Enter') this.sendChat();
+                };
+                document.getElementById('btn-emoji-picker').onclick = () => this.ui.toggleEmojiPicker();
+                
+                // CLOSE MENUS ON CLICK OUTSIDE
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.reaction-menu') && !e.target.closest('.chat-message')) {
+                        document.getElementById('reaction-menu').classList.add('hidden');
+                    }
+                });
+
+                // SIDEBAR DELEGATION (TEAM SWITCH & KICK)
+                document.getElementById('participants-sidebar').onclick = (e) => {
+                    const btn = e.target.closest('.action-icon-btn, .btn-move-team');
+                    if (btn && this.net.isHost) {
+                        const uid = btn.dataset.uid;
+                        if (btn.classList.contains('btn-kick')) {
+                            if(confirm("Expulsar jogador?")) this.net.kickPlayer(uid);
+                        } else {
+                            const target = btn.dataset.target;
+                            this.net.switchPlayerTeam(uid, target);
+                        }
+                    }
                 };
             }
 
@@ -1532,6 +1850,27 @@
                 const nick = document.getElementById('input-nickname').value || 'Anônimo';
                 this.net.sendChatMessage(text, nick);
                 input.value = '';
+            }
+            
+            async addReaction(msgId, emoji) {
+                if(!msgId) return;
+                const msgs = this.serverState.messages || [];
+                const updatedMsgs = msgs.map(m => {
+                    if(m.id === msgId) {
+                        if(!m.reactions) m.reactions = {};
+                        if(!m.reactions[emoji]) m.reactions[emoji] = [];
+                        
+                        const uid = this.net.user.uid;
+                        // Toggle reaction
+                        if(m.reactions[emoji].includes(uid)) {
+                            m.reactions[emoji] = m.reactions[emoji].filter(u => u !== uid);
+                        } else {
+                            m.reactions[emoji].push(uid);
+                        }
+                    }
+                    return m;
+                });
+                await this.net.updateMessages(updatedMsgs);
             }
 
             async createGame() {
@@ -1618,6 +1957,7 @@
                     currentWordIndex: 0,
                     correctCount: 0,
                     roundNumber: roundNum,
+                    isPaused: false, 
                     lastEvent: 'intro_' + Date.now()
                 });
 
@@ -1650,7 +1990,6 @@
                 );
             }
 
-            // NEW: MANUAL SWAP
             async hostSwapRoles() {
                 if (!this.net.isHost) return;
                 const s = this.serverState;
@@ -1668,9 +2007,39 @@
                 }
             }
 
+            async hostTogglePause() {
+                if (!this.net.isHost) return;
+                const s = this.serverState;
+                
+                if (s.isPaused) {
+                    const remaining = s.timeRemainingWhenPaused || GameData.ROUND_TIME;
+                    const newStartTime = Date.now() - ((GameData.ROUND_TIME - remaining) * 1000);
+                    
+                    try {
+                        await this.net.updateState({
+                            isPaused: false,
+                            roundStartTime: newStartTime
+                        });
+                    } catch(e) { console.error("Resume Error", e); }
+                    
+                } else {
+                    const elapsed = (Date.now() - s.roundStartTime) / 1000;
+                    const remaining = Math.max(0, GameData.ROUND_TIME - elapsed);
+                    
+                    try {
+                        await this.net.updateState({
+                            isPaused: true,
+                            timeRemainingWhenPaused: remaining
+                        });
+                    } catch(e) { console.error("Pause Error", e); }
+                }
+            }
+
             async actionCorrect() {
                 const s = this.serverState;
                 if (!s) return;
+                if (s.isPaused) return;
+
                 const newCount = s.correctCount + 1;
                 const newIdx = s.currentWordIndex + 1;
                 const scoreKey = s.currentTurn; 
@@ -1700,6 +2069,8 @@
             async actionPass() {
                 const s = this.serverState;
                 if (!s) return;
+                if (s.isPaused) return;
+
                 const words = [...s.words];
                 words.push(words[s.currentWordIndex]); 
                 try {
@@ -1715,6 +2086,7 @@
 
             async quit() {
                 if(this.localTimer) clearInterval(this.localTimer);
+                if(this.transitionTimer) clearInterval(this.transitionTimer);
                 await this.net.leaveRoom();
                 this.ui.showScreen('menu');
             }
@@ -1723,6 +2095,13 @@
                 if (!data) return;
                 this.serverState = data;
                 const uid = this.net.user?.uid;
+
+                // KICK CHECK
+                if (uid && !data.players[uid] && this.net.roomId) {
+                     alert("Você foi removido da sala.");
+                     this.quit();
+                     return;
+                }
 
                 this.net.isHost = (data.hostId === uid);
 
@@ -1737,11 +2116,10 @@
                     }
                 }
 
-                if (this.net.isHost && data.status === 'playing') {
+                if (this.net.isHost && data.status === 'playing' && !data.isPaused) {
                     const giverId = data.activePair.giver;
                     const guesserId = data.activePair.guesser;
                     if (!data.players[giverId] || !data.players[guesserId]) {
-                        console.warn("Jogador ativo desconectou! Encerrando rodada.");
                         this.net.updateState({
                             status: 'result',
                             lastEvent: 'gameover_' + Date.now()
@@ -1755,12 +2133,15 @@
                     this.lastProcessedEvent = data.lastEvent;
                 }
 
-                this.ui.updateSidebar(data, uid);
-                // NEW: Render Chat
+                this.ui.updateSidebar(data, uid, this.net.isHost);
                 this.ui.renderChat(data.messages || [], uid);
 
                 document.getElementById('waiting-room-code').textContent = this.net.roomId;
-                
+                this.ui.togglePauseOverlay(data.isPaused && data.status === 'playing');
+
+                // CLEAR TIMERS
+                if(this.transitionTimer) clearInterval(this.transitionTimer);
+
                 if (data.status === 'waiting') {
                     if(this.net.isHost) this.ui.updateLobby(true, this.net.roomId);
                     else this.ui.updateLobby(false, this.net.roomId);
@@ -1779,7 +2160,13 @@
                     this.ui.showScreen('game');
                     
                     if(this.localTimer) clearInterval(this.localTimer);
+                    
                     const tick = () => {
+                        if (data.isPaused) {
+                            this.ui.updateTimer(Math.ceil(data.timeRemainingWhenPaused));
+                            return; 
+                        }
+
                         const elapsed = (Date.now() - data.roundStartTime) / 1000;
                         const rem = Math.ceil(GameData.ROUND_TIME - elapsed);
                         this.ui.updateTimer(rem);
@@ -1803,26 +2190,34 @@
 
                 if (data.status === 'result') {
                     if(this.localTimer) clearInterval(this.localTimer);
+                    this.ui.togglePauseOverlay(false);
                     const title = document.getElementById('result-title');
                     const msg = document.getElementById('result-msg');
                     const isRed = data.currentTurn === 'red';
                     
                     title.textContent = `TIME ${isRed ? 'VERMELHO' : 'AZUL'} TERMINOU`;
                     title.style.color = isRed ? 'var(--team-red)' : 'var(--team-blue)';
-                    
                     msg.textContent = `Acertaram ${data.correctCount} palavras.`;
+
+                    // --- AUTOMATIC TRANSITION LOGIC ---
+                    const transitionDisplay = document.getElementById('transition-timer');
+                    let countdown = 5;
+                    transitionDisplay.textContent = countdown;
                     
-                    if(this.net.isHost) {
-                        const isSingleTeam = data.teams.blue.length === 0 || data.teams.red.length === 0;
-                        const btnText = isSingleTeam ? "PRÓXIMA RODADA" : "PRÓXIMA EQUIPE";
-                        document.getElementById('btn-next-level').textContent = btnText;
-                        
-                        document.getElementById('host-result-actions').classList.remove('hidden');
-                        document.getElementById('client-result-msg').classList.add('hidden');
-                    } else {
-                        document.getElementById('host-result-actions').classList.add('hidden');
-                        document.getElementById('client-result-msg').classList.remove('hidden');
-                    }
+                    this.transitionTimer = setInterval(() => {
+                        countdown--;
+                        transitionDisplay.textContent = countdown;
+                        if (countdown <= 0) {
+                            clearInterval(this.transitionTimer);
+                            // ONLY HOST TRIGGERS NEXT ROUND
+                            if (this.net.isHost) {
+                                this.nextRound();
+                            }
+                        }
+                    }, 1000);
+                    
+                    // Hide manual next button (if it existed), show return to menu
+                    
                     this.ui.showScreen('result');
                 }
             }
