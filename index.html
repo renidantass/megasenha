@@ -1864,7 +1864,7 @@
                 });
 
                 this.net.cleanupOldRooms().catch(err => console.warn("Ocorreu um erro ao limpar as salas!"));
-                
+
                 window.addEventListener('beforeunload', () => this.net.leaveRoom());
             }
 
@@ -1903,7 +1903,7 @@
                     input.setSelectionRange(0, 99999); 
                     navigator.clipboard.writeText(input.value).then(() => {
                         const originalText = document.getElementById('btn-copy-url').textContent;
-                        document.getElementById('btn-copy-url').textContent = "Copiado!";
+                        document.getElementById('btn-copy-url').textContent = "✅";
                         setTimeout(() => document.getElementById('btn-copy-url').textContent = originalText, 2000);
                     });
                 };
