@@ -4,12 +4,338 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mega Senha - Coop Online</title>
-    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* --- CSS VARIABLES & RESET --- */
+        :root {
+            --bg-color: #0f172a;
+            --bg-gradient: radial-gradient(circle at center, #1e293b, #020617);
+            --primary-color: #3b82f6;
+            --accent-color: #22c55e;
+            --danger-color: #ef4444;
+            --text-color: #ffffff;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --font-main: system-ui, -apple-system, sans-serif;
+            --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--bg-color);
+            background-image: var(--bg-gradient);
+            color: var(--text-color);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- UTILITIES --- */
+        .hidden { display: none !important; }
+        .flex-center { display: flex; justify-content: center; align-items: center; }
+        .flex-col { flex-direction: column; }
+        .w-full { width: 100%; }
+        
+        .btn {
+            cursor: pointer;
+            border: none;
+            border-radius: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            transition: transform 0.1s, filter 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn:hover { filter: brightness(1.1); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* --- PARTICIPANTS SIDEBAR --- */
+        #participants-sidebar {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 80vh;
+            overflow-y: auto;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            z-index: 50;
+            min-width: 180px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        #participants-sidebar.hidden-sidebar {
+            transform: translate(-200%, -50%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .sidebar-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .participant-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #cbd5e1;
+            font-size: 0.9rem;
+            padding: 8px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.2s;
+        }
+        
+        .participant-item.is-me {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: white;
+            font-weight: bold;
+        }
+
+        .participant-item.is-host {
+            border-left: 3px solid #facc15; /* Yellow indicator for host */
+        }
+
+        .role-icon { font-size: 1.1rem; }
+
+        /* --- SCREENS --- */
+        .screen {
+            position: absolute;
+            inset: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease-in-out;
+            z-index: 0;
+        }
+        .screen.active {
+            opacity: 1;
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        /* --- MENU SCREEN --- */
+        .title-container { text-align: center; margin-bottom: 2rem; }
+        .title-mega { 
+            font-size: 4rem; font-weight: 900; font-style: italic; 
+            color: transparent; -webkit-background-clip: text; background-clip: text;
+            background-image: linear-gradient(to bottom, #60a5fa, #1d4ed8);
+            filter: drop-shadow(0 0 10px rgba(59,130,246,0.5));
+            line-height: 1;
+        }
+        .title-senha {
+            font-size: 4rem; font-weight: 900; font-style: italic;
+            color: white; margin-top: -10px;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            line-height: 1;
+        }
+        .menu-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        .input-base {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid #475569;
+            color: white;
+            padding: 1rem;
+            font-size: 1.2rem;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .input-base:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        .btn-start {
+            background: linear-gradient(to right, #16a34a, #15803d);
+            color: white;
+            font-size: 1.2rem;
+            padding: 1.2rem;
+            width: 100%;
+            margin-bottom: 1rem;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+        }
+        .btn-join {
+            background: linear-gradient(to right, #3b82f6, #2563eb);
+            color: white;
+            font-size: 1.2rem;
+            padding: 1.2rem;
+            width: 100%;
+            margin-bottom: 1rem;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+        .btn-sound {
+            background: #334155;
+            color: white;
+            padding: 0.8rem;
+            width: 100%;
+        }
+
+        /* --- LOBBY INFO --- */
+        .room-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 1.2rem;
+            color: #fbbf24;
+            border: 1px solid #fbbf24;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        /* --- INTRO SCREEN --- */
+        .intro-label { font-size: 2rem; color: #60a5fa; margin-bottom: 1rem; animation: pulse 2s infinite; }
+        .intro-prize { font-size: 4rem; font-weight: 900; margin-bottom: 3rem; text-shadow: 0 0 20px white; }
+        .intro-ready { font-size: 5rem; color: #facc15; font-weight: 900; animation: bounce 1s infinite; }
+
+        /* --- GAME SCREEN --- */
+        .game-header {
+            position: absolute; top: 0; left: 0; right: 0;
+            padding: 1rem;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .timer-circle {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            border: 4px solid var(--primary-color);
+            background: #1e293b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 900;
+            box-shadow: var(--shadow-glow);
+            transition: border-color 0.3s, color 0.3s;
+        }
+        .timer-circle.danger { border-color: var(--danger-color); color: #f87171; animation: pulse 1s infinite; }
+        
+        .word-card {
+            background: linear-gradient(to bottom, #334155, #0f172a);
+            border: 1px solid #475569;
+            padding: 3rem 1rem;
+            border-radius: 2rem;
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        .current-word {
+            font-size: 4rem; /* Responsivo via JS ou media query */
+            font-weight: 900;
+            letter-spacing: -2px;
+        }
+        .game-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            width: 100%;
+            max-width: 600px;
+        }
+        .btn-game { height: 150px; border-radius: 1rem; font-size: 2rem; flex-direction: column; }
+        .btn-pass { background: #1e293b; border: 2px solid #ef4444; color: #ef4444; }
+        .btn-pass:hover { background: #ef4444; color: white; }
+        .btn-correct { background: linear-gradient(to bottom, #16a34a, #15803d); color: white; border-top: 2px solid #4ade80; }
+
+        .progress-dots { display: flex; gap: 5px; margin-top: 5px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background: #334155; border: 1px solid #475569; transition: all 0.3s; }
+        .dot.active { background: var(--accent-color); box-shadow: 0 0 10px var(--accent-color); transform: scale(1.2); }
+        .btn-close { background: transparent; color: #94a3b8; padding: 10px; font-size: 1.5rem; }
+        .btn-close:hover { color: white; background: rgba(255,255,255,0.1); border-radius: 50%; }
+
+        /* --- ANIMATIONS --- */
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.95); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .title-mega, .title-senha { font-size: 3rem; }
+            .current-word { font-size: 2.5rem; }
+            .btn-game { height: 100px; font-size: 1.2rem; }
+            .intro-prize { font-size: 2.5rem; }
+            
+            #participants-sidebar {
+                left: 10px;
+                padding: 10px;
+                min-width: 140px;
+            }
+            .participant-name { font-size: 0.8rem; }
+            .role-icon { font-size: 1rem; }
+        }
+        
+        .waiting-text {
+            color: #94a3b8;
+            font-size: 1.2rem;
+            margin-top: 20px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        #loading-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100;
+            display: flex; justify-content: center; align-items: center; color: white;
+            font-size: 1.5rem; backdrop-filter: blur(5px);
+        }
+    </style>
 </head>
 <body>
 
     <!-- === LOADING OVERLAY === -->
     <div id="loading-overlay" class="hidden">Conectando...</div>
+
+    <!-- === SIDEBAR: PARTICIPANTES === -->
+    <div id="participants-sidebar" class="hidden-sidebar">
+        <div class="sidebar-title">Participantes</div>
+        <div id="participants-list">
+            <!-- Items via JS -->
+        </div>
+    </div>
 
     <!-- === SCREEN: MENU === -->
     <div id="menu-screen" class="screen active">
@@ -18,13 +344,17 @@
             <div class="title-senha">SENHA</div>
         </div>
         <div class="menu-card">
+            
+            <!-- Nickname Input -->
+            <input type="text" id="input-nickname" class="input-base" placeholder="Seu Apelido" maxlength="12">
+
             <button id="btn-create" class="btn btn-start">
                 <span>🏠</span> CRIAR SALA (HOST)
             </button>
             
             <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 1.5rem 0;"></div>
             
-            <input type="text" id="input-room-code" class="input-code" placeholder="CÓDIGO" maxlength="4">
+            <input type="text" id="input-room-code" class="input-base" placeholder="CÓDIGO DA SALA" maxlength="4" style="text-transform: uppercase; letter-spacing: 2px;">
             
             <button id="btn-join" class="btn btn-join">
                 <span>👋</span> ENTRAR NA SALA
@@ -203,30 +533,25 @@
             async init() {
                 if (this.user) return;
 
-                // Tenta usar token customizado do ambiente se disponível
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     try {
                         const cred = await signInWithCustomToken(auth, __initial_auth_token);
                         this.user = cred.user;
-                        console.log("Autenticado com token customizado");
                         return;
                     } catch (e) {
                         console.warn("Falha no token customizado, tentando anônimo...", e);
                     }
                 }
                 
-                // Fallback para anônimo
                 try {
                     const cred = await signInAnonymously(auth);
                     this.user = cred.user;
-                    console.log("Autenticado anonimamente");
                 } catch (e) {
                     console.error("Falha crítica na autenticação:", e);
                     throw new Error("Não foi possível conectar ao servidor de autenticação. Verifique suas credenciais no código.");
                 }
             }
 
-            // NOVO: Método de reset para limpar conexão ao sair
             reset() {
                 if (this.unsubscribe) {
                     this.unsubscribe();
@@ -236,26 +561,30 @@
                 this.isHost = false;
             }
 
-            async createRoom() {
+            async createRoom(nickname) {
                 await this.init();
-                // Gera código de 4 letras
                 const code = Math.random().toString(36).substring(2, 6).toUpperCase();
                 this.roomId = code;
                 this.isHost = true;
 
-                // CAMINHO SIMPLIFICADO PARA HOSTING PRÓPRIO
                 const roomRef = doc(db, 'mega_senha_sessions', code);
                 
                 const initialState = {
                     hostId: this.user.uid,
-                    status: 'waiting', // waiting, playing, result
+                    status: 'waiting', 
                     level: 1,
                     correctCount: 0,
-                    words: [], // Palavras da rodada (só host define)
+                    words: [],
                     currentWordIndex: 0,
                     roundStartTime: null,
-                    lastEvent: 'created', // Para trigger de sons
-                    timestamp: Date.now()
+                    lastEvent: 'created',
+                    timestamp: Date.now(),
+                    players: {
+                        [this.user.uid]: {
+                            nickname: nickname,
+                            role: 'host'
+                        }
+                    }
                 };
 
                 await setDoc(roomRef, initialState);
@@ -263,15 +592,25 @@
                 return code;
             }
 
-            async joinRoom(code) {
+            async joinRoom(code, nickname) {
                 await this.init();
-                // CAMINHO SIMPLIFICADO
                 const roomRef = doc(db, 'mega_senha_sessions', code);
                 const snap = await getDoc(roomRef);
 
                 if (snap.exists()) {
                     this.roomId = code;
                     this.isHost = false;
+                    
+                    // Adicionar jogador à lista
+                    // Usamos update com dot notation para não sobrescrever o map inteiro
+                    const updateData = {};
+                    updateData[`players.${this.user.uid}`] = {
+                        nickname: nickname,
+                        role: 'guesser'
+                    };
+                    
+                    await updateDoc(roomRef, updateData);
+                    
                     this.subscribeToRoom(code);
                     return true;
                 }
@@ -281,7 +620,6 @@
             subscribeToRoom(code) {
                 if (this.unsubscribe) this.unsubscribe();
                 
-                // CAMINHO SIMPLIFICADO
                 const roomRef = doc(db, 'mega_senha_sessions', code);
                 this.unsubscribe = onSnapshot(roomRef, (doc) => {
                     if (doc.exists() && this.onStateChange) {
@@ -292,7 +630,6 @@
 
             async updateState(newData) {
                 if (!this.isHost || !this.roomId) return;
-                // CAMINHO SIMPLIFICADO
                 const roomRef = doc(db, 'mega_senha_sessions', this.roomId);
                 await updateDoc(roomRef, {
                     ...newData,
@@ -410,6 +747,9 @@
                 this.clientStatus = document.getElementById('client-status');
                 this.hostResultActions = document.getElementById('host-result-actions');
                 this.clientResultMsg = document.getElementById('client-result-msg');
+                
+                this.sidebar = document.getElementById('participants-sidebar');
+                this.participantsList = document.getElementById('participants-list');
             }
 
             toggleLoading(show) {
@@ -420,6 +760,42 @@
             showScreen(screenName) {
                 Object.values(this.screens).forEach(el => el.classList.remove('active'));
                 this.screens[screenName].classList.add('active');
+                
+                // Show/Hide sidebar
+                if (screenName === 'menu') {
+                    this.sidebar.classList.add('hidden-sidebar');
+                } else {
+                    this.sidebar.classList.remove('hidden-sidebar');
+                }
+            }
+
+            updateParticipants(playersMap, currentUserId) {
+                this.participantsList.innerHTML = '';
+                if (!playersMap) return;
+
+                Object.keys(playersMap).forEach(uid => {
+                    const p = playersMap[uid];
+                    const isMe = uid === currentUserId;
+                    const isHost = p.role === 'host';
+                    
+                    const el = document.createElement('div');
+                    el.className = `participant-item ${isMe ? 'is-me' : ''} ${isHost ? 'is-host' : ''}`;
+                    
+                    // Icon
+                    const icon = document.createElement('span');
+                    icon.className = 'role-icon';
+                    icon.textContent = isHost ? '👑' : '👤';
+                    
+                    // Name
+                    const name = document.createElement('span');
+                    name.className = 'participant-name';
+                    name.textContent = p.nickname || 'Anônimo';
+                    if (isMe) name.textContent += ' (Você)';
+
+                    el.appendChild(icon);
+                    el.appendChild(name);
+                    this.participantsList.appendChild(el);
+                });
             }
 
             configureRole(isHost) {
@@ -471,7 +847,7 @@
             updateProgress(count) {
                 const dots = this.elProgress.children;
                 for (let i = 0; i < dots.length; i++) {
-                    dots[i].classList.remove('active'); // Reset to ensure correctness on sync
+                    dots[i].classList.remove('active'); 
                     if (i < count) dots[i].classList.add('active');
                 }
             }
@@ -499,7 +875,7 @@
                 this.audio = new AudioController();
                 this.ui = new UIController();
                 this.net = new NetworkController();
-                this.startedOnce = false; // NOVO: Flag no construtor
+                this.startedOnce = false; 
 
                 // Callbacks do Network
                 this.net.onStateChange = (state) => this.handleServerState(state);
@@ -526,22 +902,33 @@
                 // Game Controls (Host Only)
                 document.getElementById('btn-pass').onclick = () => this.hostActionPass();
                 document.getElementById('btn-correct').onclick = () => this.hostActionCorrect();
-                document.getElementById('btn-quit').onclick = () => this.resetToMenu(); // Only simple reset for now
+                document.getElementById('btn-quit').onclick = () => this.resetToMenu();
                 
                 // Result Actions (Host Only)
                 document.getElementById('btn-next-level').onclick = () => this.hostNextLevel();
                 document.getElementById('btn-menu-return').onclick = () => this.resetToMenu();
             }
 
+            getNickname() {
+                const nick = document.getElementById('input-nickname').value.trim();
+                if (!nick) {
+                    alert("Por favor, digite um apelido.");
+                    return null;
+                }
+                return nick;
+            }
+
             // --- HOST ACTIONS ---
 
             async hostCreateGame() {
+                const nickname = this.getNickname();
+                if (!nickname) return;
+
                 this.ui.toggleLoading(true);
-                // NOVO: Garantir que o estado anterior está limpo
                 this.startedOnce = false;
                 try {
-                    const code = await this.net.createRoom();
-                    this.ui.configureRole(true); // Is Host
+                    const code = await this.net.createRoom(nickname);
+                    this.ui.configureRole(true); 
                 } catch (e) {
                     console.error("Erro criação sala:", e);
                     alert("Erro ao criar sala: " + e.message);
@@ -551,7 +938,6 @@
             }
 
             startHostRound(level) {
-                // Lógica de preparação da rodada
                 const shuffled = [...GameData.WORDS].sort(() => 0.5 - Math.random());
                 const roundWords = shuffled.slice(0, GameData.WORDS_PER_ROUND);
 
@@ -575,10 +961,6 @@
             }
 
             hostActionCorrect() {
-                // Optimistic UI update handled by state sync, but we calculate new state
-                // Need current state from somewhere. We rely on the last data received from network or local track
-                // To keep it simple, we read from a local synced copy or just trust the logic
-                // Let's assume we have `this.serverState` updated by handleServerState
                 if(!this.serverState) return;
 
                 let nextCount = this.serverState.correctCount + 1;
@@ -598,8 +980,6 @@
             hostActionPass() {
                 if(!this.serverState) return;
                 
-                // Move current word to end of array logic? 
-                // Firestore arrays are tricky. Better to just read words, modify, write back.
                 const words = [...this.serverState.words];
                 const currentWord = words[this.serverState.currentWordIndex];
                 words.push(currentWord);
@@ -635,17 +1015,19 @@
             // --- CLIENT ACTIONS ---
 
             async clientJoinGame() {
+                const nickname = this.getNickname();
+                if (!nickname) return;
+
                 const inputEl = document.getElementById('input-room-code');
-                const code = inputEl.value.trim().toUpperCase(); // NOVO: Trim
+                const code = inputEl.value.trim().toUpperCase(); 
                 
                 if (code.length !== 4) return alert("Código inválido (use 4 letras)");
 
                 this.ui.toggleLoading(true);
                 try {
-                    const joined = await this.net.joinRoom(code);
+                    const joined = await this.net.joinRoom(code, nickname);
                     if (joined) {
-                        this.ui.configureRole(false); // Is Client
-                        // handleServerState will take over
+                        this.ui.configureRole(false); 
                     } else {
                         alert("Sala não encontrada!");
                     }
@@ -660,7 +1042,6 @@
             resetToMenu() {
                 if (this.localState.timerId) clearInterval(this.localState.timerId);
                 
-                // NOVO: Limpeza completa do estado ao voltar ao menu
                 this.net.reset(); 
                 this.startedOnce = false;
                 this.serverState = null;
@@ -671,9 +1052,12 @@
             // --- STATE SYNC ---
 
             handleServerState(data) {
-                this.serverState = data; // Keep a local copy for host logic calculations
+                this.serverState = data;
 
-                // 1. Audio Triggers based on events
+                // Sync Participants List
+                this.ui.updateParticipants(data.players, this.net.user?.uid);
+
+                // 1. Audio Triggers
                 if (data.lastEvent && data.lastEvent !== this.localState.lastProcessedEvent) {
                     const type = data.lastEvent.split('_')[0];
                     if (['correct', 'pass', 'win', 'gameover'].includes(type)) {
@@ -685,15 +1069,11 @@
                 // 2. Routing Screens
                 if (data.status === 'waiting') {
                     if (this.net.isHost) {
-                        // Host auto starts round 1 immediately or shows a lobby?
-                        // Let's show lobby briefly or just start.
-                        // For simplicity, Host initiates Round 1 immediately upon creation if status is waiting
                         if (!this.startedOnce) {
                             this.startedOnce = true;
                             this.startHostRound(1);
                         }
                     } else {
-                        // Client shows waiting screen
                         document.getElementById('waiting-room-code').textContent = this.net.roomId;
                         this.ui.showScreen('waiting');
                     }
@@ -710,19 +1090,14 @@
                 }
 
                 if (data.status === 'playing') {
-                    // Update Game UI
                     this.ui.updateGameHeader(prize, GameData.WORDS_PER_ROUND);
-                    
-                    // Progress
                     this.ui.updateProgress(data.correctCount);
                     
-                    // Word
                     const currentWord = data.words[data.currentWordIndex];
                     this.ui.updateWord(currentWord, this.net.isHost);
 
                     this.ui.showScreen('game');
 
-                    // Timer Logic (Synced)
                     if (this.localState.timerId) clearInterval(this.localState.timerId);
                     
                     const updateLocalTimer = () => {
@@ -732,11 +1107,7 @@
                         
                         this.ui.updateTimer(remaining);
                         
-                        // Client side tick sound
                         if (remaining <= 10 && remaining > 0) {
-                            // Debounce sound or check specific second? 
-                            // Simplified: Just play if integer changed? 
-                            // For simplicity, omit tick sound sync or just do it locally loosely
                             if (Math.floor(elapsed) !== this.localState.lastTick) {
                                 this.audio.play('tick');
                                 this.localState.lastTick = Math.floor(elapsed);
@@ -746,13 +1117,13 @@
                         if (remaining <= 0) {
                             clearInterval(this.localState.timerId);
                             if (this.net.isHost) {
-                                this.hostEndRound(false); // Host triggers end
+                                this.hostEndRound(false); 
                             }
                         }
                     };
 
                     updateLocalTimer();
-                    this.localState.timerId = setInterval(updateLocalTimer, 200); // 5Hz refresh
+                    this.localState.timerId = setInterval(updateLocalTimer, 200); 
                     return;
                 }
 
@@ -768,7 +1139,6 @@
             }
         }
 
-        // START
         const game = new GameEngine();
     </script>
 </body>
