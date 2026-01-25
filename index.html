@@ -208,6 +208,11 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             text-align: center;
         }
+        .input-group {
+            position: relative;
+            margin-bottom: 1rem;
+            width: 100%;
+        }
         .input-base {
             width: 100%;
             background: rgba(15, 23, 42, 0.8);
@@ -217,13 +222,26 @@
             font-size: 1.2rem;
             text-align: center;
             border-radius: 8px;
-            margin-bottom: 1rem;
         }
         .input-base:focus {
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
+        .btn-refresh-nick {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        .btn-refresh-nick:hover { opacity: 1; transform: translateY(-50%) scale(1.1); }
+
         .btn-start {
             background: linear-gradient(to right, #16a34a, #15803d);
             color: white;
@@ -455,7 +473,10 @@
         <div class="menu-card">
             
             <!-- Nickname Input -->
-            <input type="text" id="input-nickname" class="input-base" placeholder="Seu Apelido" maxlength="12">
+            <div class="input-group">
+                <input type="text" id="input-nickname" class="input-base" placeholder="Seu Apelido" maxlength="12" style="padding-right: 40px;">
+                <button id="btn-refresh-nick" class="btn-refresh-nick" title="Gerar novo apelido">🎲</button>
+            </div>
 
             <button id="btn-create" class="btn btn-start">
                 <span>🏠</span> CRIAR SALA (HOST)
@@ -633,6 +654,11 @@
             ],
             WORDS_PER_ROUND: 5,
             ROUND_TIME: 60
+        };
+
+        const NICK_DATA = {
+            adj: ["Veloz", "Esperto", "Forte", "Sábio", "Feliz", "Bravo", "Mestre", "Ninja", "Super", "Mega", "Rápido", "Leal"],
+            noun: ["Pato", "Urso", "Gato", "Lobo", "Leão", "Falcão", "Tigre", "Panda", "Raposa", "Dragão", "Tubarão", "Águia"]
         };
 
         /**
@@ -1015,6 +1041,7 @@
                 this.localTimer = null;
                 this.lastProcessedEvent = 0;
                 this.bindEvents();
+                this.initNick();
             }
 
             bindEvents() {
@@ -1033,11 +1060,35 @@
                 
                 // NOVO: Botão de reset
                 document.getElementById('btn-force-reset').onclick = () => this.net.forceNewIdentity();
+                
+                // Nickname refresh
+                document.getElementById('btn-refresh-nick').onclick = () => {
+                    const newNick = this.generateRandomNick();
+                    document.getElementById('input-nickname').value = newNick;
+                };
+            }
+
+            initNick() {
+                const savedNick = localStorage.getItem('ms_nickname');
+                const inputNick = document.getElementById('input-nickname');
+                if (savedNick) {
+                    inputNick.value = savedNick;
+                } else {
+                    inputNick.value = this.generateRandomNick();
+                }
+            }
+
+            generateRandomNick() {
+                const adj = NICK_DATA.adj[Math.floor(Math.random() * NICK_DATA.adj.length)];
+                const noun = NICK_DATA.noun[Math.floor(Math.random() * NICK_DATA.noun.length)];
+                const num = Math.floor(Math.random() * 99) + 1;
+                return `${noun}${adj}${num}`;
             }
 
             getNick() {
                 const n = document.getElementById('input-nickname').value.trim();
                 if (!n) { alert("Digite um apelido"); return null; }
+                localStorage.setItem('ms_nickname', n);
                 return n;
             }
 
