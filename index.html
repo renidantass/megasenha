@@ -61,35 +61,62 @@
         .btn:hover { filter: brightness(1.1); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-        /* --- PARTICIPANTS SIDEBAR (DESKTOP DEFAULT) --- */
+        /* --- PARTICIPANTS SIDEBAR (MOBILE FIRST: BOTTOM SHEET) --- */
         #participants-sidebar {
             position: fixed;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(15, 23, 42, 0.9);
+            left: 0;
+            right: 0;
+            bottom: 0;
+            top: auto;
+            transform: none;
+            background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px 20px 0 0;
             padding: 15px;
+            padding-bottom: 25px;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: flex-start;
             gap: 15px;
-            max-height: 90vh;
+            max-height: 40vh;
             overflow-y: auto;
             transition: transform 0.3s ease, opacity 0.3s ease;
             z-index: 50;
-            min-width: 200px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
         }
         
         #participants-sidebar.hidden-sidebar {
-            transform: translate(-200%, -50%);
-            opacity: 0;
+            transform: translateY(110%);
+            opacity: 1;
             pointer-events: none;
         }
 
+        /* Desktop Override for Sidebar */
+        @media (min-width: 769px) {
+            #participants-sidebar {
+                left: 20px;
+                top: 50%;
+                bottom: auto;
+                right: auto;
+                transform: translateY(-50%);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 12px;
+                flex-direction: column;
+                flex-wrap: nowrap;
+                max-height: 90vh;
+                min-width: 220px;
+                width: auto;
+            }
+            #participants-sidebar.hidden-sidebar {
+                transform: translate(-200%, -50%);
+            }
+        }
+
         .team-section {
+            flex: 1;
+            min-width: 120px;
             display: flex;
             flex-direction: column;
             gap: 5px;
@@ -114,6 +141,7 @@
         .participant-item {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 8px;
             color: #cbd5e1;
             font-size: 0.9rem;
@@ -137,12 +165,15 @@
 
         .role-badge { 
             font-size: 0.7rem; 
-            padding: 2px 4px; 
+            padding: 2px 5px; 
             border-radius: 4px; 
-            background: #000;
-            color: #aaa;
-            margin-left: auto;
+            background: #0f172a;
+            color: #94a3b8;
+            border: 1px solid #334155;
+            white-space: nowrap;
         }
+        .role-badge.giver { color: #facc15; border-color: #facc15; }
+        .role-badge.guesser { color: #4ade80; border-color: #4ade80; }
 
         /* --- SCOREBOARD --- */
         .scoreboard {
@@ -379,44 +410,7 @@
             .btn-game { height: 100px; font-size: 1.2rem; }
             .intro-prize { font-size: 2.5rem; }
             
-            /* -- SIDEBAR ON MOBILE: BOTTOM SHEET -- */
-            #participants-sidebar {
-                left: 0;
-                right: 0;
-                top: auto;
-                bottom: 0;
-                transform: none; /* Reset vertical centering */
-                width: 100%;
-                min-width: 0;
-                border-radius: 20px 20px 0 0;
-                max-height: 40vh; /* Limit height */
-                padding: 15px;
-                padding-bottom: 25px; /* Safe area for swipe */
-                box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
-                
-                /* Layout as grid/row for compact view */
-                flex-direction: row; 
-                flex-wrap: wrap;
-                align-items: flex-start;
-                gap: 15px;
-            }
-
-            #participants-sidebar.hidden-sidebar {
-                transform: translateY(110%); /* Slide down */
-                opacity: 1; /* Keep visible for animation */
-                pointer-events: none;
-            }
-
-            .team-section {
-                flex: 1;
-                min-width: 100px; /* Ensure columns don't squish too much */
-            }
-            
-            .sidebar-title {
-                font-size: 0.7rem;
-            }
-
-            .role-badge { display: none; } /* Hide complex badges on mobile */
+            .role-badge { display: inline-block; font-size: 0.6rem; padding: 2px; } /* Show badges on mobile */
             .participant-item { font-size: 0.8rem; padding: 4px 8px; }
         }
         
@@ -1002,17 +996,36 @@
                 Object.keys(players).forEach(uid => {
                     const p = players[uid];
                     const isMe = uid === currentUserId;
-                    const isActive = (uid === giverId || uid === guesserId) && state.status === 'playing';
                     
                     let roleLabel = '';
+                    let isReserve = false;
+                    
+                    // Determine Role
                     if (uid === giverId) roleLabel = 'Dica';
                     else if (uid === guesserId) roleLabel = 'Chute';
+                    else {
+                        // Check if player belongs to active team but is not playing -> Reserve
+                        if ((state.currentTurn === 'red' && teams.red.includes(uid)) || 
+                            (state.currentTurn === 'blue' && teams.blue.includes(uid))) {
+                            if (state.status === 'playing' || state.status === 'intro') {
+                                isReserve = true;
+                                roleLabel = 'Reserva';
+                            }
+                        }
+                    }
+
+                    const isActive = roleLabel === 'Dica' || roleLabel === 'Chute';
 
                     const el = document.createElement('div');
                     el.className = `participant-item ${isMe ? 'is-me' : ''} ${isActive ? 'active-turn' : ''}`;
+                    
+                    let badgeClass = 'role-badge';
+                    if (roleLabel === 'Dica') badgeClass += ' giver';
+                    else if (roleLabel === 'Chute') badgeClass += ' guesser';
+                    
                     el.innerHTML = `
                         <span>${p.nickname || '???'}</span>
-                        ${roleLabel ? `<span class="role-badge">${roleLabel}</span>` : ''}
+                        ${roleLabel ? `<span class="${badgeClass}">${roleLabel}</span>` : ''}
                     `;
 
                     // Decide where to put - SAFELY
@@ -1239,17 +1252,31 @@
             }
 
             setupRound(turnColor, reds, blues, roundNum) {
-                // Rotate logic:
-                // We pick 2 players from the active team.
-                // Index Giver = roundNum % teamSize
-                // Index Guesser = (roundNum + 1) % teamSize
+                // Rotate logic REVISED:
+                // We want the previous Giver to become Guesser.
+                // We want the previous Guesser to become Spectator (or rotate out).
                 
                 const activeTeamList = turnColor === 'red' ? reds : blues;
                 const size = activeTeamList.length;
                 
-                // If only 1 player in team (testing), allow them to play alone (not ideal but avoids crash)
-                let giverId = activeTeamList[roundNum % size];
-                let guesserId = size > 1 ? activeTeamList[(roundNum + 1) % size] : activeTeamList[0];
+                // LOGIC:
+                // Index 0 -> Guesser
+                // Index 1 -> Giver
+                // Index 2 -> Spectator/Reserve
+                // Rotation shifts indices: [A, B, C] -> [C, A, B] -> [B, C, A]
+                
+                // Effective Indices for this round:
+                // Guesser Index = roundNum % size
+                // Giver Index = (roundNum + 1) % size
+                
+                // Round 0: Guesser=0 (A), Giver=1 (B)
+                // Round 1: Guesser=1 (B), Giver=2 (C) -- B moved from Giver to Guesser!
+                // Round 2: Guesser=2 (C), Giver=0 (A) -- C moved from Giver to Guesser!
+                
+                // This logic ensures "Person who gave hints (Giver) becomes person who guesses (Guesser)".
+                
+                let guesserId = activeTeamList[roundNum % size];
+                let giverId = size > 1 ? activeTeamList[(roundNum + 1) % size] : activeTeamList[0];
 
                 const shuffledWords = [...GameData.WORDS].sort(() => 0.5 - Math.random()).slice(0, GameData.WORDS_PER_ROUND);
 
@@ -1289,6 +1316,12 @@
                 const nextRoundNum = this.serverState.roundNumber + 1;
                 
                 const isSingleTeam = this.serverState.teams.blue.length === 0 || this.serverState.teams.red.length === 0;
+                
+                // If 2 teams, each team plays every 2 rounds.
+                // Red plays R0, R2, R4...
+                // Blue plays R1, R3, R5...
+                // So Rotation Index = floor(Round / 2)
+                
                 const rotationIndex = isSingleTeam ? nextRoundNum : Math.floor(nextRoundNum / 2);
                 
                 this.setupRound(
