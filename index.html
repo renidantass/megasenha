@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mega Senha - Coop Online</title>
+    <title>Mega Senha - Competição</title>
     <style>
         /* --- CSS VARIABLES & RESET --- */
         :root {
@@ -12,6 +12,8 @@
             --primary-color: #3b82f6;
             --accent-color: #22c55e;
             --danger-color: #ef4444;
+            --team-red: #ef4444;
+            --team-blue: #3b82f6;
             --text-color: #ffffff;
             --glass-bg: rgba(30, 41, 59, 0.7);
             --glass-border: rgba(255, 255, 255, 0.1);
@@ -65,26 +67,32 @@
             left: 20px;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(15, 23, 42, 0.8);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 15px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            max-height: 80vh;
+            gap: 15px;
+            max-height: 90vh;
             overflow-y: auto;
             transition: transform 0.3s ease, opacity 0.3s ease;
             z-index: 50;
-            min-width: 180px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            min-width: 200px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
         }
         
         #participants-sidebar.hidden-sidebar {
             transform: translate(-200%, -50%);
             opacity: 0;
             pointer-events: none;
+        }
+
+        .team-section {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
 
         .sidebar-title {
@@ -96,32 +104,63 @@
             margin-bottom: 5px;
             font-weight: bold;
             letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
         }
+
+        .sidebar-title.red { color: var(--team-red); border-color: var(--team-red); }
+        .sidebar-title.blue { color: var(--team-blue); border-color: var(--team-blue); }
 
         .participant-item {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             color: #cbd5e1;
             font-size: 0.9rem;
-            padding: 8px;
-            border-radius: 8px;
+            padding: 6px 10px;
+            border-radius: 6px;
             background: rgba(255, 255, 255, 0.05);
             transition: all 0.2s;
         }
         
         .participant-item.is-me {
-            background: rgba(59, 130, 246, 0.2);
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
             font-weight: bold;
         }
-
-        .participant-item.is-host {
-            border-left: 3px solid #facc15; /* Yellow indicator for host */
+        
+        .participant-item.active-turn {
+            border-left: 3px solid #facc15;
+            background: rgba(250, 204, 21, 0.1);
         }
 
-        .role-icon { font-size: 1.1rem; }
+        .role-badge { 
+            font-size: 0.7rem; 
+            padding: 2px 4px; 
+            border-radius: 4px; 
+            background: #000;
+            color: #aaa;
+            margin-left: auto;
+        }
+
+        /* --- SCOREBOARD --- */
+        .scoreboard {
+            display: flex;
+            gap: 20px;
+            font-size: 1.5rem;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+        .score-box {
+            padding: 5px 15px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid transparent;
+        }
+        .score-box.red { border-color: var(--team-red); color: var(--team-red); }
+        .score-box.blue { border-color: var(--team-blue); color: var(--team-blue); }
+        .score-box.active { background: rgba(255,255,255,0.1); box-shadow: 0 0 15px currentColor; }
 
         /* --- SCREENS --- */
         .screen {
@@ -225,8 +264,9 @@
 
         /* --- INTRO SCREEN --- */
         .intro-label { font-size: 2rem; color: #60a5fa; margin-bottom: 1rem; animation: pulse 2s infinite; }
-        .intro-prize { font-size: 4rem; font-weight: 900; margin-bottom: 3rem; text-shadow: 0 0 20px white; }
+        .intro-prize { font-size: 3rem; font-weight: 900; margin-bottom: 2rem; text-shadow: 0 0 20px white; color: white; }
         .intro-ready { font-size: 5rem; color: #facc15; font-weight: 900; animation: bounce 1s infinite; }
+        .team-indicator { font-size: 1.5rem; text-transform: uppercase; font-weight: bold; margin-bottom: 10px; }
 
         /* --- GAME SCREEN --- */
         .game-header {
@@ -266,7 +306,12 @@
             margin-bottom: 2rem;
             position: relative;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            border-top: 5px solid transparent;
         }
+        
+        .word-card.turn-red { border-top-color: var(--team-red); }
+        .word-card.turn-blue { border-top-color: var(--team-blue); }
+
         .current-word {
             font-size: 4rem; /* Responsivo via JS ou media query */
             font-weight: 900;
@@ -304,10 +349,10 @@
             #participants-sidebar {
                 left: 10px;
                 padding: 10px;
-                min-width: 140px;
+                min-width: 160px;
+                font-size: 0.8rem;
             }
-            .participant-name { font-size: 0.8rem; }
-            .role-icon { font-size: 1rem; }
+            .role-badge { display: none; }
         }
         
         .waiting-text {
@@ -331,9 +376,26 @@
 
     <!-- === SIDEBAR: PARTICIPANTES === -->
     <div id="participants-sidebar" class="hidden-sidebar">
-        <div class="sidebar-title">Participantes</div>
-        <div id="participants-list">
-            <!-- Items via JS -->
+        <!-- Team RED -->
+        <div class="team-section">
+            <div class="sidebar-title red">
+                Time Vermelho <span id="score-red-sidebar">0</span>
+            </div>
+            <div id="list-red"></div>
+        </div>
+        <div style="height: 10px;"></div>
+        <!-- Team BLUE -->
+        <div class="team-section">
+            <div class="sidebar-title blue">
+                Time Azul <span id="score-blue-sidebar">0</span>
+            </div>
+            <div id="list-blue"></div>
+        </div>
+        <div style="height: 10px;"></div>
+        <!-- Spectators/Lobby -->
+        <div class="team-section">
+            <div class="sidebar-title">Lobby / Espect.</div>
+            <div id="list-lobby"></div>
         </div>
     </div>
 
@@ -366,21 +428,32 @@
         </div>
     </div>
 
-    <!-- === SCREEN: WAITING (CLIENT) === -->
+    <!-- === SCREEN: WAITING (CLIENT/LOBBY) === -->
     <div id="waiting-screen" class="screen">
         <div class="title-container">
             <div class="title-mega" style="font-size: 3rem;">SALA</div>
             <div id="waiting-room-code" class="room-badge" style="font-size: 2rem;">????</div>
         </div>
-        <p class="waiting-text">Aguardando o Host iniciar a rodada...</p>
+        <div class="menu-card hidden" id="host-start-panel">
+            <p style="margin-bottom: 15px; color: #94a3b8;">Quando todos entrarem, clique abaixo para dividir times e começar.</p>
+            <button id="btn-start-match" class="btn btn-start" style="background: linear-gradient(to right, #eab308, #ca8a04);">
+                🎲 GERAR TIMES E INICIAR
+            </button>
+        </div>
+        <p class="waiting-text" id="waiting-msg">Aguardando o Host iniciar...</p>
     </div>
 
     <!-- === SCREEN: INTRO/LEVEL === -->
     <div id="intro-screen" class="screen">
         <div id="intro-room-display" class="room-badge hidden">SALA: ABCD</div>
-        <div class="intro-label">PRÓXIMO PRÊMIO</div>
-        <div id="intro-prize-text" class="intro-prize">R$ 10 MIL</div>
-        <div class="intro-ready">PREPARE-SE</div>
+        <div class="intro-label">RODADA DO TIME</div>
+        <div id="intro-team-text" class="team-indicator">VERMELHO</div>
+        <div class="intro-prize">PREPARE-SE</div>
+        
+        <div style="margin-top: 20px; font-size: 1.2rem; color: #ccc;">
+            Doador: <span id="intro-giver" style="color: #fff; font-weight: bold;">-</span><br>
+            Adivinha: <span id="intro-guesser" style="color: #fff; font-weight: bold;">-</span>
+        </div>
     </div>
 
     <!-- === SCREEN: GAME === -->
@@ -388,9 +461,10 @@
         <div class="game-header">
             <div class="flex-center">
                 <button id="btn-quit" class="btn btn-close" title="Sair">✖</button>
-                <div style="margin-left: 10px;">
-                    <div style="font-size: 0.7rem; color: #60a5fa; text-transform: uppercase;">Prêmio</div>
-                    <div id="game-prize" style="font-size: 1.5rem; font-weight: bold;">R$ 10 MIL</div>
+                <div class="scoreboard">
+                    <div id="score-red" class="score-box red">0</div>
+                    <div style="color: #475569;">x</div>
+                    <div id="score-blue" class="score-box blue">0</div>
                 </div>
             </div>
             
@@ -407,13 +481,16 @@
             </div>
         </div>
 
-        <div class="word-card">
-            <div style="color: #60a5fa; letter-spacing: 2px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; font-size: 0.9rem;">Senha Atual</div>
+        <div id="game-word-container" class="word-card">
+            <div style="color: #94a3b8; letter-spacing: 2px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; font-size: 0.9rem;">
+                <span id="turn-indicator">VEZ DO TIME VERMELHO</span>
+            </div>
             <div id="word-display" class="current-word">...</div>
+            <div id="role-display" style="margin-top: 10px; color: #64748b; font-size: 1rem;"></div>
         </div>
 
-        <!-- HOST CONTROLS -->
-        <div id="host-controls" class="game-controls">
+        <!-- ACTIVE GIVER CONTROLS -->
+        <div id="host-controls" class="game-controls hidden">
             <button id="btn-pass" class="btn btn-game btn-pass">
                 <span>⏩</span>
                 <span>PULAR</span>
@@ -424,30 +501,29 @@
             </button>
         </div>
 
-        <!-- CLIENT STATUS -->
-        <div id="client-status" class="hidden" style="text-align: center; color: #94a3b8; font-size: 1.2rem;">
-            <p>Você é um participante.</p>
-            <p>Aguarde o Host dar as dicas.</p>
+        <!-- SPECTATOR MSG -->
+        <div id="spectator-msg" class="hidden waiting-text" style="font-size: 1rem;">
+            Você está assistindo esta rodada.
         </div>
     </div>
 
     <!-- === SCREEN: RESULT === -->
     <div id="result-screen" class="screen">
         <div class="menu-card">
-            <div id="result-icon" style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
-            <h2 id="result-title" style="font-size: 2rem; margin-bottom: 0.5rem;">RODADA VENCIDA!</h2>
-            <p id="result-msg" style="color: #cbd5e1; margin-bottom: 2rem;">Você garantiu o prêmio.</p>
+            <div id="result-icon" style="font-size: 4rem; margin-bottom: 1rem;">🏁</div>
+            <h2 id="result-title" style="font-size: 2rem; margin-bottom: 0.5rem;">FIM DA RODADA</h2>
+            <p id="result-msg" style="color: #cbd5e1; margin-bottom: 2rem;">...</p>
             
             <div id="host-result-actions">
                 <button id="btn-next-level" class="btn btn-start" style="background: var(--primary-color);">
-                    PRÓXIMA RODADA
+                    PRÓXIMA EQUIPE
                 </button>
                 <button id="btn-menu-return" class="btn btn-sound">
-                    Voltar ao Menu
+                    Encerrar Jogo
                 </button>
             </div>
             <div id="client-result-msg" class="hidden waiting-text">
-                Aguardando o Host decidir...
+                Aguardando o Host...
             </div>
         </div>
     </div>
@@ -458,11 +534,6 @@
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        /**
-         * GLOBAL CONFIG
-         * * IMPORTANTE: PARA DEPLOY (GITHUB PAGES, ETC)
-         * Substitua o objeto 'customConfig' abaixo com as suas credenciais do Firebase Console.
-         */
         const customConfig =  {
             apiKey: "AIzaSyDoaWmTN2513e5LGxOq--65ekL4PMqjUAs",
             authDomain: "megasenha-c29ba.firebaseapp.com",
@@ -473,7 +544,6 @@
             measurementId: "G-B2QYXF8ZFC"
         };
 
-        // Lógica de Seleção de Config (Ambiente vs Customizado)
         let firebaseConfig;
         try {
             if (typeof __firebase_config !== 'undefined') {
@@ -485,21 +555,19 @@
             firebaseConfig = customConfig;
         }
 
-        // Validação Simples para Alertar o Usuário
         if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "SUA_API_KEY_AQUI") {
             if (window.location.hostname !== 'localhost' && !window.location.hostname.includes('webcontainer')) {
                 console.error("ERRO CRÍTICO: Configuração do Firebase ausente.");
-                alert("ATENÇÃO: Para o jogo funcionar neste site, você precisa editar o arquivo HTML e preencher a variável 'customConfig' com suas chaves do Firebase.");
+                alert("ATENÇÃO: Preencha a variável 'customConfig' no código HTML com suas chaves do Firebase.");
             }
         }
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
         /**
-         * MÓDULO: DADOS (MODEL)
+         * MODEL
          */
         const GameData = {
             WORDS: [
@@ -508,18 +576,16 @@
                 "ELEFANTE", "GIRASSOL", "AVIÃO", "TELEFONE", "RELÓGIO", "LIVRO", "CANETA", "MESA", "CADEIRA", "SAPATO",
                 "CAMISA", "CALÇA", "VESTIDO", "ÁGUA", "FOGO", "TERRA", "AR", "CORAÇÃO", "CÉREBRO", "MÃO",
                 "PÉ", "OLHO", "BOCA", "NARIZ", "ORELHA", "CABELO", "DENTE", "LÍNGUA", "UNHA", "DEDO",
-                "FACA", "GARFO", "COLHER", "PRATO", "COPO", "XÍCARA", "PANELA", "FOGÃO", "GELADEIRA", "MICROONDAS"
-            ],
-            PRIZES: [
-                "R$ 0", "R$ 10 MIL", "R$ 20 MIL", "R$ 50 MIL", "R$ 100 MIL", 
-                "R$ 200 MIL", "R$ 300 MIL", "R$ 400 MIL", "R$ 500 MIL", "R$ 1 MILHÃO"
+                "FACA", "GARFO", "COLHER", "PRATO", "COPO", "XÍCARA", "PANELA", "FOGÃO", "GELADEIRA", "MICROONDAS",
+                "PIZZA", "HAMBURGUER", "BATATA", "SALADA", "FRUTA", "SUCO", "CERVEJA", "VINHO", "FESTA", "BOLO",
+                "VELA", "PRESENTE", "NATAL", "PÁSCOA", "CARNAVAL", "IGREJA", "SHOPPING", "MERCADO", "FARMÁCIA", "HOSPITAL"
             ],
             WORDS_PER_ROUND: 5,
-            ROUND_TIME: 90
+            ROUND_TIME: 60
         };
 
         /**
-         * MÓDULO: NETWORK (FIREBASE)
+         * NETWORK
          */
         class NetworkController {
             constructor() {
@@ -527,36 +593,24 @@
                 this.roomId = null;
                 this.isHost = false;
                 this.unsubscribe = null;
-                this.onStateChange = null; // Callback para update de UI
+                this.onStateChange = null; 
             }
 
             async init() {
                 if (this.user) return;
-
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     try {
                         const cred = await signInWithCustomToken(auth, __initial_auth_token);
                         this.user = cred.user;
                         return;
-                    } catch (e) {
-                        console.warn("Falha no token customizado, tentando anônimo...", e);
-                    }
+                    } catch (e) { console.warn("Fallback anonymous", e); }
                 }
-                
-                try {
-                    const cred = await signInAnonymously(auth);
-                    this.user = cred.user;
-                } catch (e) {
-                    console.error("Falha crítica na autenticação:", e);
-                    throw new Error("Não foi possível conectar ao servidor de autenticação. Verifique suas credenciais no código.");
-                }
+                const cred = await signInAnonymously(auth);
+                this.user = cred.user;
             }
 
             reset() {
-                if (this.unsubscribe) {
-                    this.unsubscribe();
-                    this.unsubscribe = null;
-                }
+                if (this.unsubscribe) { this.unsubscribe(); this.unsubscribe = null; }
                 this.roomId = null;
                 this.isHost = false;
             }
@@ -569,21 +623,25 @@
 
                 const roomRef = doc(db, 'mega_senha_sessions', code);
                 
+                // Initial State
                 const initialState = {
                     hostId: this.user.uid,
                     status: 'waiting', 
-                    level: 1,
+                    scores: { red: 0, blue: 0 },
+                    currentTurn: 'red', // or 'blue'
+                    teams: { red: [], blue: [] }, // Arrays of UIDs
+                    activePair: { giver: null, guesser: null },
+                    
                     correctCount: 0,
                     words: [],
                     currentWordIndex: 0,
                     roundStartTime: null,
+                    roundNumber: 0, // Total rounds played
+                    
                     lastEvent: 'created',
                     timestamp: Date.now(),
                     players: {
-                        [this.user.uid]: {
-                            nickname: nickname,
-                            role: 'host'
-                        }
+                        [this.user.uid]: { nickname: nickname, role: 'host', team: null }
                     }
                 };
 
@@ -600,17 +658,9 @@
                 if (snap.exists()) {
                     this.roomId = code;
                     this.isHost = false;
-                    
-                    // Adicionar jogador à lista
-                    // Usamos update com dot notation para não sobrescrever o map inteiro
                     const updateData = {};
-                    updateData[`players.${this.user.uid}`] = {
-                        nickname: nickname,
-                        role: 'guesser'
-                    };
-                    
+                    updateData[`players.${this.user.uid}`] = { nickname: nickname, role: 'player', team: null };
                     await updateDoc(roomRef, updateData);
-                    
                     this.subscribeToRoom(code);
                     return true;
                 }
@@ -619,7 +669,6 @@
 
             subscribeToRoom(code) {
                 if (this.unsubscribe) this.unsubscribe();
-                
                 const roomRef = doc(db, 'mega_senha_sessions', code);
                 this.unsubscribe = onSnapshot(roomRef, (doc) => {
                     if (doc.exists() && this.onStateChange) {
@@ -631,94 +680,62 @@
             async updateState(newData) {
                 if (!this.isHost || !this.roomId) return;
                 const roomRef = doc(db, 'mega_senha_sessions', this.roomId);
-                await updateDoc(roomRef, {
-                    ...newData,
-                    timestamp: Date.now()
-                });
+                await updateDoc(roomRef, { ...newData, timestamp: Date.now() });
             }
         }
 
         /**
-         * MÓDULO: ÁUDIO
+         * AUDIO
          */
         class AudioController {
-            constructor() {
-                this.enabled = true;
-                this.ctx = null;
-            }
-
-            init() {
-                if (!this.ctx) {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    this.ctx = new AudioContext();
-                }
-            }
-
-            toggle() {
-                this.enabled = !this.enabled;
-                return this.enabled;
-            }
-
+            constructor() { this.enabled = true; this.ctx = null; }
+            init() { if (!this.ctx) { const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC(); } }
+            toggle() { this.enabled = !this.enabled; return this.enabled; }
             play(type) {
                 if (!this.enabled) return;
                 this.init(); 
-
                 const t = this.ctx.currentTime;
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
+                osc.connect(gain); gain.connect(this.ctx.destination);
 
                 switch (type) {
                     case 'tick':
                         osc.type = 'square'; osc.frequency.setValueAtTime(800, t);
-                        gain.gain.setValueAtTime(0.05, t);
-                        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
-                        osc.start(t); osc.stop(t + 0.05);
-                        break;
+                        gain.gain.setValueAtTime(0.05, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+                        osc.start(t); osc.stop(t + 0.05); break;
                     case 'correct':
-                        osc.type = 'sine'; osc.frequency.setValueAtTime(800, t);
-                        osc.frequency.exponentialRampToValueAtTime(1200, t + 0.1);
+                        osc.type = 'sine'; osc.frequency.setValueAtTime(800, t); osc.frequency.exponentialRampToValueAtTime(1200, t + 0.1);
                         gain.gain.setValueAtTime(0.3, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
-                        osc.start(t); osc.stop(t + 0.5);
-                        break;
+                        osc.start(t); osc.stop(t + 0.5); break;
                     case 'pass':
-                        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, t);
-                        osc.frequency.linearRampToValueAtTime(100, t + 0.3);
+                        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, t); osc.frequency.linearRampToValueAtTime(100, t + 0.3);
                         gain.gain.setValueAtTime(0.2, t); gain.gain.linearRampToValueAtTime(0.01, t + 0.3);
-                        osc.start(t); osc.stop(t + 0.3);
-                        break;
+                        osc.start(t); osc.stop(t + 0.3); break;
                     case 'win':
-                        this._playChord([523.25, 659.25, 783.99, 1046.50]);
-                        break;
+                        this._playChord([523.25, 659.25, 783.99, 1046.50]); break;
                     case 'gameover':
-                        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, t);
-                        osc.frequency.linearRampToValueAtTime(100, t + 1);
+                        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, t); osc.frequency.linearRampToValueAtTime(100, t + 1);
                         gain.gain.setValueAtTime(0.3, t); gain.gain.linearRampToValueAtTime(0.01, t + 1);
-                        osc.start(t); osc.stop(t + 1);
-                        break;
+                        osc.start(t); osc.stop(t + 1); break;
                 }
             }
-
             _playChord(freqs) {
                 const t = this.ctx.currentTime;
                 freqs.forEach((f, i) => {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
+                    const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+                    osc.connect(gain); gain.connect(this.ctx.destination);
                     osc.type = 'triangle'; osc.frequency.value = f;
                     const delay = i * 0.1;
                     gain.gain.setValueAtTime(0, t + delay);
-                    gain.gain.linearRampToValueAtTime(0.2, t + delay + 0.05);
-                    gain.gain.linearRampToValueAtTime(0, t + delay + 1.5);
+                    gain.gain.linearRampToValueAtTime(0.2, t + delay + 0.05); gain.gain.linearRampToValueAtTime(0, t + delay + 1.5);
                     osc.start(t + delay); osc.stop(t + delay + 1.5);
                 });
             }
         }
 
         /**
-         * MÓDULO: UI
+         * UI
          */
         class UIController {
             constructor() {
@@ -730,416 +747,434 @@
                     result: document.getElementById('result-screen')
                 };
                 
-                this.elIntroPrize = document.getElementById('intro-prize-text');
-                this.elGamePrize = document.getElementById('game-prize');
-                this.elTimer = document.getElementById('timer-display');
-                this.elWord = document.getElementById('word-display');
-                this.elProgress = document.getElementById('progress-container');
-                this.elResultTitle = document.getElementById('result-title');
-                this.elResultMsg = document.getElementById('result-msg');
-                this.elResultIcon = document.getElementById('result-icon');
-                this.btnNextLevel = document.getElementById('btn-next-level');
-                this.btnSound = document.getElementById('btn-sound');
-                this.elRoomDisplay = document.getElementById('intro-room-display');
+                this.sidebar = document.getElementById('participants-sidebar');
+                this.listRed = document.getElementById('list-red');
+                this.listBlue = document.getElementById('list-blue');
+                this.listLobby = document.getElementById('list-lobby');
+                this.scoreRedSidebar = document.getElementById('score-red-sidebar');
+                this.scoreBlueSidebar = document.getElementById('score-blue-sidebar');
                 
                 this.loading = document.getElementById('loading-overlay');
+                this.hostStartPanel = document.getElementById('host-start-panel');
+                this.waitingMsg = document.getElementById('waiting-msg');
+                
+                // Game Elements
+                this.scoreRed = document.getElementById('score-red');
+                this.scoreBlue = document.getElementById('score-blue');
+                this.turnIndicator = document.getElementById('turn-indicator');
+                this.wordCard = document.getElementById('game-word-container');
+                this.elWord = document.getElementById('word-display');
+                this.roleDisplay = document.getElementById('role-display');
+                this.elTimer = document.getElementById('timer-display');
+                this.progressContainer = document.getElementById('progress-container');
+                
+                // Controls
                 this.hostControls = document.getElementById('host-controls');
-                this.clientStatus = document.getElementById('client-status');
+                this.spectatorMsg = document.getElementById('spectator-msg');
                 this.hostResultActions = document.getElementById('host-result-actions');
                 this.clientResultMsg = document.getElementById('client-result-msg');
-                
-                this.sidebar = document.getElementById('participants-sidebar');
-                this.participantsList = document.getElementById('participants-list');
             }
 
-            toggleLoading(show) {
-                if(show) this.loading.classList.remove('hidden');
-                else this.loading.classList.add('hidden');
-            }
+            toggleLoading(show) { show ? this.loading.classList.remove('hidden') : this.loading.classList.add('hidden'); }
 
             showScreen(screenName) {
                 Object.values(this.screens).forEach(el => el.classList.remove('active'));
                 this.screens[screenName].classList.add('active');
-                
-                // Show/Hide sidebar
-                if (screenName === 'menu') {
-                    this.sidebar.classList.add('hidden-sidebar');
-                } else {
-                    this.sidebar.classList.remove('hidden-sidebar');
-                }
+                if (screenName === 'menu') this.sidebar.classList.add('hidden-sidebar');
+                else this.sidebar.classList.remove('hidden-sidebar');
             }
 
-            updateParticipants(playersMap, currentUserId) {
-                this.participantsList.innerHTML = '';
-                if (!playersMap) return;
+            updateSidebar(state, currentUserId) {
+                this.listRed.innerHTML = '';
+                this.listBlue.innerHTML = '';
+                this.listLobby.innerHTML = '';
 
-                Object.keys(playersMap).forEach(uid => {
-                    const p = playersMap[uid];
+                this.scoreRedSidebar.textContent = state.scores.red;
+                this.scoreBlueSidebar.textContent = state.scores.blue;
+
+                const players = state.players;
+                // Identify active pair
+                const giverId = state.activePair?.giver;
+                const guesserId = state.activePair?.guesser;
+
+                // Sort and Display
+                Object.keys(players).forEach(uid => {
+                    const p = players[uid];
                     const isMe = uid === currentUserId;
-                    const isHost = p.role === 'host';
+                    const isActive = (uid === giverId || uid === guesserId) && state.status === 'playing';
                     
-                    const el = document.createElement('div');
-                    el.className = `participant-item ${isMe ? 'is-me' : ''} ${isHost ? 'is-host' : ''}`;
-                    
-                    // Icon
-                    const icon = document.createElement('span');
-                    icon.className = 'role-icon';
-                    icon.textContent = isHost ? '👑' : '👤';
-                    
-                    // Name
-                    const name = document.createElement('span');
-                    name.className = 'participant-name';
-                    name.textContent = p.nickname || 'Anônimo';
-                    if (isMe) name.textContent += ' (Você)';
+                    let roleLabel = '';
+                    if (uid === giverId) roleLabel = 'Dica';
+                    else if (uid === guesserId) roleLabel = 'Chute';
 
-                    el.appendChild(icon);
-                    el.appendChild(name);
-                    this.participantsList.appendChild(el);
+                    const el = document.createElement('div');
+                    el.className = `participant-item ${isMe ? 'is-me' : ''} ${isActive ? 'active-turn' : ''}`;
+                    el.innerHTML = `
+                        <span>${p.nickname}</span>
+                        ${roleLabel ? `<span class="role-badge">${roleLabel}</span>` : ''}
+                    `;
+
+                    // Decide where to put
+                    if (state.teams.red.includes(uid)) this.listRed.appendChild(el);
+                    else if (state.teams.blue.includes(uid)) this.listBlue.appendChild(el);
+                    else this.listLobby.appendChild(el);
                 });
             }
 
-            configureRole(isHost) {
+            updateLobby(isHost) {
                 if (isHost) {
-                    this.hostControls.classList.remove('hidden');
-                    this.clientStatus.classList.add('hidden');
-                    this.hostResultActions.classList.remove('hidden');
-                    this.clientResultMsg.classList.add('hidden');
+                    this.hostStartPanel.classList.remove('hidden');
+                    this.waitingMsg.classList.add('hidden');
                 } else {
+                    this.hostStartPanel.classList.add('hidden');
+                    this.waitingMsg.classList.remove('hidden');
+                }
+            }
+
+            updateGameUI(state, currentUserId) {
+                // Scoreboard
+                this.scoreRed.textContent = state.scores.red;
+                this.scoreBlue.textContent = state.scores.blue;
+                
+                // Active Team styling
+                this.scoreRed.classList.remove('active');
+                this.scoreBlue.classList.remove('active');
+                if (state.currentTurn === 'red') {
+                    this.scoreRed.classList.add('active');
+                    this.turnIndicator.textContent = "VEZ DO TIME VERMELHO";
+                    this.turnIndicator.style.color = "var(--team-red)";
+                    this.wordCard.className = "word-card turn-red";
+                } else {
+                    this.scoreBlue.classList.add('active');
+                    this.turnIndicator.textContent = "VEZ DO TIME AZUL";
+                    this.turnIndicator.style.color = "var(--team-blue)";
+                    this.wordCard.className = "word-card turn-blue";
+                }
+
+                // Roles
+                const isGiver = state.activePair.giver === currentUserId;
+                const isGuesser = state.activePair.guesser === currentUserId;
+                const isSpectator = !isGiver && !isGuesser;
+
+                if (isGiver) {
+                    this.elWord.textContent = state.words[state.currentWordIndex];
+                    this.elWord.style.color = "white";
+                    this.roleDisplay.textContent = "Você deve dar as dicas!";
+                    this.hostControls.classList.remove('hidden');
+                    this.spectatorMsg.classList.add('hidden');
+                } else if (isGuesser) {
+                    this.elWord.textContent = "???";
+                    this.elWord.style.color = "#475569";
+                    this.roleDisplay.textContent = "Tente adivinhar a palavra!";
                     this.hostControls.classList.add('hidden');
-                    this.clientStatus.classList.remove('hidden');
-                    this.hostResultActions.classList.add('hidden');
-                    this.clientResultMsg.classList.remove('hidden');
+                    this.spectatorMsg.classList.add('hidden');
+                } else {
+                    this.elWord.textContent = state.status === 'playing' ? "???" : "..."; // Spectators don't see word? Or should they? Usually spectators want to see to have fun.
+                    // Let's make spectators see the word for fun!
+                    this.elWord.textContent = state.words[state.currentWordIndex];
+                    this.elWord.style.color = "#64748b"; // Dimmed
+                    
+                    this.roleDisplay.textContent = "Espectador";
+                    this.hostControls.classList.add('hidden');
+                    this.spectatorMsg.classList.remove('hidden');
+                }
+
+                // Dots
+                this.progressContainer.innerHTML = '';
+                for(let i=0; i<GameData.WORDS_PER_ROUND; i++) {
+                    const d = document.createElement('div');
+                    d.className = 'dot ' + (i < state.correctCount ? 'active' : '');
+                    this.progressContainer.appendChild(d);
                 }
             }
-
-            updateIntro(prizeText, roomCode) {
-                this.elIntroPrize.textContent = prizeText;
-                this.elRoomDisplay.textContent = `SALA: ${roomCode}`;
-                this.elRoomDisplay.classList.remove('hidden');
-            }
-
-            updateGameHeader(prizeText, maxWords) {
-                this.elGamePrize.textContent = prizeText;
-                this.elProgress.innerHTML = '';
-                for (let i = 0; i < maxWords; i++) {
-                    const dot = document.createElement('div');
-                    dot.className = 'dot';
-                    this.elProgress.appendChild(dot);
-                }
+            
+            updateIntro(state) {
+                const isRed = state.currentTurn === 'red';
+                const color = isRed ? "var(--team-red)" : "var(--team-blue)";
+                const teamName = isRed ? "VERMELHO" : "AZUL";
+                
+                document.getElementById('intro-team-text').textContent = teamName;
+                document.getElementById('intro-team-text').style.color = color;
+                
+                const giverName = state.players[state.activePair.giver]?.nickname || '???';
+                const guesserName = state.players[state.activePair.guesser]?.nickname || '???';
+                
+                document.getElementById('intro-giver').textContent = giverName;
+                document.getElementById('intro-guesser').textContent = guesserName;
             }
 
             updateTimer(seconds) {
                 this.elTimer.childNodes[0].nodeValue = Math.max(0, seconds) + ' '; 
-                if (seconds <= 10) this.elTimer.classList.add('danger');
-                else this.elTimer.classList.remove('danger');
-            }
-
-            updateWord(word, isHost) {
-                if (isHost) {
-                    this.elWord.textContent = word;
-                    this.elWord.style.color = 'white';
-                } else {
-                    this.elWord.textContent = "????";
-                    this.elWord.style.color = '#475569';
-                }
-            }
-
-            updateProgress(count) {
-                const dots = this.elProgress.children;
-                for (let i = 0; i < dots.length; i++) {
-                    dots[i].classList.remove('active'); 
-                    if (i < count) dots[i].classList.add('active');
-                }
-            }
-
-            showResult(isWin, prizeWon, nextPrize, totalCorrect) {
-                if (isWin) {
-                    this.elResultTitle.textContent = "RODADA VENCIDA!";
-                    this.elResultMsg.innerHTML = `Prêmio Garantido: <strong style="color:#4ade80">${prizeWon}</strong>`;
-                    this.elResultIcon.textContent = "🎉";
-                    this.btnNextLevel.textContent = nextPrize === "MAX" ? "JOGAR NOVAMENTE" : `PRÓXIMA (${nextPrize})`;
-                } else {
-                    this.elResultTitle.textContent = "TEMPO ESGOTADO!";
-                    this.elResultMsg.textContent = `Acertos: ${totalCorrect}. Necessário: TODAS.`;
-                    this.elResultIcon.textContent = "⌛";
-                    this.btnNextLevel.textContent = "TENTAR NOVAMENTE";
-                }
+                if (seconds <= 10) this.elTimer.classList.add('danger'); else this.elTimer.classList.remove('danger');
             }
         }
 
         /**
-         * MÓDULO: JOGO (CONTROLLER)
+         * LOGIC
          */
         class GameEngine {
             constructor() {
                 this.audio = new AudioController();
                 this.ui = new UIController();
                 this.net = new NetworkController();
-                this.startedOnce = false; 
-
-                // Callbacks do Network
-                this.net.onStateChange = (state) => this.handleServerState(state);
-
-                this.localState = {
-                    timerId: null,
-                    lastProcessedEvent: 0
-                };
-
+                this.net.onStateChange = (s) => this.handleState(s);
+                this.localTimer = null;
+                this.lastProcessedEvent = 0;
                 this.bindEvents();
             }
 
             bindEvents() {
-                // Menu
-                document.getElementById('btn-create').onclick = () => this.hostCreateGame();
-                document.getElementById('btn-join').onclick = () => this.clientJoinGame();
-                
-                // Sound
+                document.getElementById('btn-create').onclick = () => this.createGame();
+                document.getElementById('btn-join').onclick = () => this.joinGame();
+                document.getElementById('btn-start-match').onclick = () => this.startMatch();
+                document.getElementById('btn-pass').onclick = () => this.actionPass();
+                document.getElementById('btn-correct').onclick = () => this.actionCorrect();
+                document.getElementById('btn-quit').onclick = () => this.quit();
+                document.getElementById('btn-menu-return').onclick = () => this.quit();
+                document.getElementById('btn-next-level').onclick = () => this.nextRound();
                 document.getElementById('btn-sound').onclick = (e) => {
-                    const enabled = this.audio.toggle();
-                    e.target.textContent = enabled ? '🔊 Sons Ligados' : '🔇 Sons Desligados';
+                    const en = this.audio.toggle();
+                    e.target.textContent = en ? '🔊 Sons Ligados' : '🔇 Sons Desligados';
                 };
-                
-                // Game Controls (Host Only)
-                document.getElementById('btn-pass').onclick = () => this.hostActionPass();
-                document.getElementById('btn-correct').onclick = () => this.hostActionCorrect();
-                document.getElementById('btn-quit').onclick = () => this.resetToMenu();
-                
-                // Result Actions (Host Only)
-                document.getElementById('btn-next-level').onclick = () => this.hostNextLevel();
-                document.getElementById('btn-menu-return').onclick = () => this.resetToMenu();
             }
 
-            getNickname() {
-                const nick = document.getElementById('input-nickname').value.trim();
-                if (!nick) {
-                    alert("Por favor, digite um apelido.");
-                    return null;
-                }
-                return nick;
+            getNick() {
+                const n = document.getElementById('input-nickname').value.trim();
+                if (!n) { alert("Digite um apelido"); return null; }
+                return n;
             }
 
-            // --- HOST ACTIONS ---
-
-            async hostCreateGame() {
-                const nickname = this.getNickname();
-                if (!nickname) return;
-
+            async createGame() {
+                const nick = this.getNick();
+                if (!nick) return;
                 this.ui.toggleLoading(true);
-                this.startedOnce = false;
                 try {
-                    const code = await this.net.createRoom(nickname);
-                    this.ui.configureRole(true); 
-                } catch (e) {
-                    console.error("Erro criação sala:", e);
-                    alert("Erro ao criar sala: " + e.message);
-                } finally {
-                    this.ui.toggleLoading(false);
-                }
+                    await this.net.createRoom(nick);
+                    this.ui.updateLobby(true);
+                } catch(e) { alert(e.message); }
+                this.ui.toggleLoading(false);
             }
 
-            startHostRound(level) {
-                const shuffled = [...GameData.WORDS].sort(() => 0.5 - Math.random());
-                const roundWords = shuffled.slice(0, GameData.WORDS_PER_ROUND);
+            async joinGame() {
+                const nick = this.getNick();
+                if (!nick) return;
+                const code = document.getElementById('input-room-code').value.trim().toUpperCase();
+                if (code.length !== 4) return alert("Código inválido");
+                
+                this.ui.toggleLoading(true);
+                const ok = await this.net.joinRoom(code, nick);
+                this.ui.toggleLoading(false);
+                if (!ok) alert("Sala não encontrada");
+                else this.ui.updateLobby(false);
+            }
+
+            async startMatch() {
+                // Logic to split teams
+                const players = Object.keys(this.serverState.players);
+                if (players.length < 2) return alert("Precisa de pelo menos 2 jogadores!");
+
+                // Shuffle
+                players.sort(() => Math.random() - 0.5);
+                
+                const mid = Math.ceil(players.length / 2);
+                const reds = players.slice(0, mid);
+                const blues = players.slice(mid);
+
+                // Initialize Round 1
+                this.setupRound('red', reds, blues, 0);
+            }
+
+            setupRound(turnColor, reds, blues, roundNum) {
+                // Rotate logic:
+                // We pick 2 players from the active team.
+                // Index Giver = roundNum % teamSize
+                // Index Guesser = (roundNum + 1) % teamSize
+                
+                const activeTeamList = turnColor === 'red' ? reds : blues;
+                const size = activeTeamList.length;
+                
+                // If only 1 player in team (testing), allow them to play alone (not ideal but avoids crash)
+                let giverId = activeTeamList[roundNum % size];
+                let guesserId = size > 1 ? activeTeamList[(roundNum + 1) % size] : activeTeamList[0];
+
+                const shuffledWords = [...GameData.WORDS].sort(() => 0.5 - Math.random()).slice(0, GameData.WORDS_PER_ROUND);
 
                 this.net.updateState({
+                    teams: { red: reds, blue: blues },
                     status: 'intro',
-                    level: level,
-                    words: roundWords,
+                    currentTurn: turnColor,
+                    activePair: { giver: giverId, guesser: guesserId },
+                    words: shuffledWords,
                     currentWordIndex: 0,
                     correctCount: 0,
+                    roundNumber: roundNum,
                     lastEvent: 'intro_' + Date.now()
                 });
 
-                // Start timer after 2 seconds
                 setTimeout(() => {
                     this.net.updateState({
                         status: 'playing',
                         roundStartTime: Date.now(),
                         lastEvent: 'start_' + Date.now()
                     });
-                }, 2000);
+                }, 3000);
             }
 
-            hostActionCorrect() {
-                if(!this.serverState) return;
-
-                let nextCount = this.serverState.correctCount + 1;
-                let nextIndex = this.serverState.currentWordIndex + 1;
+            nextRound() {
+                // Switch turns
+                const nextColor = this.serverState.currentTurn === 'red' ? 'blue' : 'red';
+                // Increment round number only if we completed a full cycle? 
+                // Let's just increment global round number.
+                // round 0: Red (idx 0, 1)
+                // round 1: Blue (idx 0, 1)
+                // round 2: Red (idx 1, 2) ... rotation!
                 
-                if (nextCount >= GameData.WORDS_PER_ROUND) {
-                    this.hostEndRound(true);
+                // We need to calculate the "Team Round Index".
+                // Simple way: Count how many times Red has played based on total rounds.
+                // Actually, let's just pass `serverState.roundNumber + 1`.
+                // BUT, we need to pass the teams array back because `startMatch` only runs once.
+                
+                const nextRoundNum = this.serverState.roundNumber + 1;
+                // Since we need to calculate indices based on how many times THIS team played:
+                // Red plays on even global rounds (0, 2, 4), Blue on odd (1, 3, 5).
+                // Red Rotation Index = nextRoundNum / 2
+                // Blue Rotation Index = (nextRoundNum - 1) / 2
+                
+                // Wait, simpler: calculate rotation based on `Math.floor(nextRoundNum / 2)`?
+                // Let's rely on the passed arrays in state.
+                
+                this.setupRound(
+                    nextColor, 
+                    this.serverState.teams.red, 
+                    this.serverState.teams.blue, 
+                    Math.floor(nextRoundNum / 2) // Shift rotation only when the team plays again
+                );
+            }
+
+            actionCorrect() {
+                const s = this.serverState;
+                const newCount = s.correctCount + 1;
+                const newIdx = s.currentWordIndex + 1;
+
+                // Update Score immediately
+                const scoreKey = s.currentTurn; 
+                const newScores = { ...s.scores };
+                newScores[scoreKey]++;
+
+                if (newCount >= GameData.WORDS_PER_ROUND) {
+                    this.net.updateState({
+                        scores: newScores,
+                        status: 'result',
+                        lastEvent: 'win_' + Date.now()
+                    });
                 } else {
                     this.net.updateState({
-                        correctCount: nextCount,
-                        currentWordIndex: nextIndex,
+                        scores: newScores,
+                        correctCount: newCount,
+                        currentWordIndex: newIdx,
                         lastEvent: 'correct_' + Date.now()
                     });
                 }
             }
 
-            hostActionPass() {
-                if(!this.serverState) return;
-                
-                const words = [...this.serverState.words];
-                const currentWord = words[this.serverState.currentWordIndex];
-                words.push(currentWord);
-                
+            actionPass() {
+                const s = this.serverState;
+                const words = [...s.words];
+                words.push(words[s.currentWordIndex]); // Cycle
                 this.net.updateState({
                     words: words,
-                    currentWordIndex: this.serverState.currentWordIndex + 1,
+                    currentWordIndex: s.currentWordIndex + 1,
                     lastEvent: 'pass_' + Date.now()
                 });
             }
 
-            hostEndRound(isWin) {
-                this.net.updateState({
-                    status: 'result',
-                    lastEvent: isWin ? 'win_' + Date.now() : 'gameover_' + Date.now()
-                });
-            }
-
-            hostNextLevel() {
-                if(!this.serverState) return;
-                const isWin = this.serverState.correctCount >= GameData.WORDS_PER_ROUND;
-                const isMax = this.serverState.level >= GameData.PRIZES.length - 1;
-
-                if (isWin && !isMax) {
-                    this.startHostRound(this.serverState.level + 1);
-                } else if (isWin && isMax) {
-                    this.startHostRound(1); // Restart game
-                } else {
-                    this.startHostRound(this.serverState.level); // Retry
-                }
-            }
-
-            // --- CLIENT ACTIONS ---
-
-            async clientJoinGame() {
-                const nickname = this.getNickname();
-                if (!nickname) return;
-
-                const inputEl = document.getElementById('input-room-code');
-                const code = inputEl.value.trim().toUpperCase(); 
-                
-                if (code.length !== 4) return alert("Código inválido (use 4 letras)");
-
-                this.ui.toggleLoading(true);
-                try {
-                    const joined = await this.net.joinRoom(code, nickname);
-                    if (joined) {
-                        this.ui.configureRole(false); 
-                    } else {
-                        alert("Sala não encontrada!");
-                    }
-                } catch(e) {
-                    console.error(e);
-                    alert("Erro: " + e.message);
-                } finally {
-                    this.ui.toggleLoading(false);
-                }
-            }
-
-            resetToMenu() {
-                if (this.localState.timerId) clearInterval(this.localState.timerId);
-                
-                this.net.reset(); 
-                this.startedOnce = false;
-                this.serverState = null;
-                
+            quit() {
+                if(this.localTimer) clearInterval(this.localTimer);
+                this.net.reset();
                 this.ui.showScreen('menu');
             }
 
-            // --- STATE SYNC ---
-
-            handleServerState(data) {
+            handleState(data) {
                 this.serverState = data;
+                const uid = this.net.user?.uid;
 
-                // Sync Participants List
-                this.ui.updateParticipants(data.players, this.net.user?.uid);
-
-                // 1. Audio Triggers
-                if (data.lastEvent && data.lastEvent !== this.localState.lastProcessedEvent) {
-                    const type = data.lastEvent.split('_')[0];
-                    if (['correct', 'pass', 'win', 'gameover'].includes(type)) {
-                        this.audio.play(type);
-                    }
-                    this.localState.lastProcessedEvent = data.lastEvent;
+                // Audio
+                if (data.lastEvent !== this.lastProcessedEvent) {
+                    const evt = data.lastEvent.split('_')[0];
+                    if(['intro','start','correct','pass','win','gameover'].includes(evt)) this.audio.play(evt);
+                    this.lastProcessedEvent = data.lastEvent;
                 }
 
-                // 2. Routing Screens
+                // Sidebar
+                this.ui.updateSidebar(data, uid);
+
+                // Routing
+                document.getElementById('waiting-room-code').textContent = this.net.roomId;
+                
                 if (data.status === 'waiting') {
-                    if (this.net.isHost) {
-                        if (!this.startedOnce) {
-                            this.startedOnce = true;
-                            this.startHostRound(1);
-                        }
-                    } else {
-                        document.getElementById('waiting-room-code').textContent = this.net.roomId;
-                        this.ui.showScreen('waiting');
-                    }
+                    if(this.net.isHost) this.ui.updateLobby(true);
+                    else this.ui.updateLobby(false);
+                    this.ui.showScreen('waiting');
                     return;
                 }
 
-                const prize = GameData.PRIZES[data.level];
-                
                 if (data.status === 'intro') {
-                    this.ui.updateIntro(prize, this.net.roomId);
+                    this.ui.updateIntro(data);
                     this.ui.showScreen('intro');
-                    if (this.localState.timerId) clearInterval(this.localState.timerId);
                     return;
                 }
 
                 if (data.status === 'playing') {
-                    this.ui.updateGameHeader(prize, GameData.WORDS_PER_ROUND);
-                    this.ui.updateProgress(data.correctCount);
-                    
-                    const currentWord = data.words[data.currentWordIndex];
-                    this.ui.updateWord(currentWord, this.net.isHost);
-
+                    this.ui.updateGameUI(data, uid);
                     this.ui.showScreen('game');
-
-                    if (this.localState.timerId) clearInterval(this.localState.timerId);
                     
-                    const updateLocalTimer = () => {
-                        const now = Date.now();
-                        const elapsed = (now - data.roundStartTime) / 1000;
-                        const remaining = Math.ceil(GameData.ROUND_TIME - elapsed);
+                    if(this.localTimer) clearInterval(this.localTimer);
+                    const tick = () => {
+                        const elapsed = (Date.now() - data.roundStartTime) / 1000;
+                        const rem = Math.ceil(GameData.ROUND_TIME - elapsed);
+                        this.ui.updateTimer(rem);
                         
-                        this.ui.updateTimer(remaining);
-                        
-                        if (remaining <= 10 && remaining > 0) {
-                            if (Math.floor(elapsed) !== this.localState.lastTick) {
-                                this.audio.play('tick');
-                                this.localState.lastTick = Math.floor(elapsed);
-                            }
+                        if (rem <= 10 && rem > 0 && Math.floor(elapsed) !== this.localLastTick) {
+                            this.audio.play('tick');
+                            this.localLastTick = Math.floor(elapsed);
                         }
 
-                        if (remaining <= 0) {
-                            clearInterval(this.localState.timerId);
+                        if (rem <= 0) {
+                            clearInterval(this.localTimer);
                             if (this.net.isHost) {
-                                this.hostEndRound(false); 
+                                this.net.updateState({ status: 'result', lastEvent: 'gameover_' + Date.now() });
                             }
                         }
                     };
-
-                    updateLocalTimer();
-                    this.localState.timerId = setInterval(updateLocalTimer, 200); 
+                    tick();
+                    this.localTimer = setInterval(tick, 200);
                     return;
                 }
 
                 if (data.status === 'result') {
-                    if (this.localState.timerId) clearInterval(this.localState.timerId);
+                    if(this.localTimer) clearInterval(this.localTimer);
+                    const title = document.getElementById('result-title');
+                    const msg = document.getElementById('result-msg');
+                    const isRed = data.currentTurn === 'red';
                     
-                    const isWin = data.correctCount >= GameData.WORDS_PER_ROUND;
-                    const nextPrize = GameData.PRIZES[data.level + 1] || "MAX";
+                    title.textContent = `TIME ${isRed ? 'VERMELHO' : 'AZUL'} TERMINOU`;
+                    title.style.color = isRed ? 'var(--team-red)' : 'var(--team-blue)';
                     
-                    this.ui.showResult(isWin, prize, nextPrize, data.correctCount);
+                    msg.textContent = `Acertaram ${data.correctCount} palavras.`;
+                    
+                    if(this.net.isHost) {
+                        document.getElementById('host-result-actions').classList.remove('hidden');
+                        document.getElementById('client-result-msg').classList.add('hidden');
+                    } else {
+                        document.getElementById('host-result-actions').classList.add('hidden');
+                        document.getElementById('client-result-msg').classList.remove('hidden');
+                    }
                     this.ui.showScreen('result');
                 }
             }
         }
 
-        const game = new GameEngine();
+        new GameEngine();
     </script>
 </body>
 </html>
