@@ -174,6 +174,7 @@
         }
         .role-badge.giver { color: #facc15; border-color: #facc15; }
         .role-badge.guesser { color: #4ade80; border-color: #4ade80; }
+        .role-badge.host { color: #60a5fa; border-color: #60a5fa; font-weight: bold; }
 
         /* --- SCOREBOARD --- */
         .scoreboard {
@@ -619,7 +620,7 @@
             appId: "1:449328223327:web:89ddff46caf8594be4f7ea",
             measurementId: "G-B2QYXF8ZFC"
         };
-        
+
         let firebaseConfig;
         try {
             if (typeof __firebase_config !== 'undefined') {
@@ -873,6 +874,20 @@
                 }
 
                 this.reset();
+            }
+
+            // NEW: PROMOTE HOST LOGIC
+            async promoteNewHost(newHostId) {
+                if (!this.roomId) return;
+                const roomRef = doc(db, 'mega_senha_sessions', this.roomId);
+                try {
+                    await updateDoc(roomRef, {
+                        hostId: newHostId,
+                        [`players.${newHostId}.role`]: 'host'
+                    });
+                } catch (e) {
+                    console.error("Erro ao promover host:", e);
+                }
             }
 
             subscribeToRoom(code) {
@@ -1470,6 +1485,21 @@
                 if (!data) return; // safety check
                 this.serverState = data;
                 const uid = this.net.user?.uid;
+
+                // Sync isHost status dynamically based on server data
+                this.net.isHost = (data.hostId === uid);
+
+                // --- NEW: Host Migration Logic ---
+                if (data.players && !data.players[data.hostId]) {
+                    console.warn("Host desconectado. Elegendo novo host...");
+                    const remainingPlayers = Object.keys(data.players).sort();
+                    if (remainingPlayers.length > 0) {
+                        const newHostId = remainingPlayers[0];
+                        if (uid === newHostId) {
+                            this.net.promoteNewHost(newHostId);
+                        }
+                    }
+                }
 
                 // --- NEW: Disconnect Safety Check (Host Only) ---
                 if (this.net.isHost && data.status === 'playing') {
