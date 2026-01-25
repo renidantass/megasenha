@@ -619,7 +619,7 @@
             appId: "1:449328223327:web:89ddff46caf8594be4f7ea",
             measurementId: "G-B2QYXF8ZFC"
         };
-
+        
         let firebaseConfig;
         try {
             if (typeof __firebase_config !== 'undefined') {
@@ -814,6 +814,10 @@
                     
                     lastEvent: 'created',
                     timestamp: Date.now(),
+                    
+                    // NEW: Memory of used words
+                    usedWords: [],
+                    
                     players: {
                         [this.user.uid]: { nickname: nickname, role: 'host', team: null }
                     }
@@ -1338,7 +1342,21 @@
                 let guesserId = activeTeamList[roundNum % size];
                 let giverId = size > 1 ? activeTeamList[(roundNum + 1) % size] : activeTeamList[0];
 
-                const shuffledWords = [...GameData.WORDS].sort(() => 0.5 - Math.random()).slice(0, GameData.WORDS_PER_ROUND);
+                // --- NEW: Word Memory Logic ---
+                const usedWords = this.serverState.usedWords || [];
+                const availableWords = GameData.WORDS.filter(w => !usedWords.includes(w));
+                
+                // If we ran out of words (or low), recycle
+                let pool = availableWords;
+                if (pool.length < GameData.WORDS_PER_ROUND) {
+                    pool = GameData.WORDS; // Reset pool
+                    // Optionally clear usedWords in DB, but simpler to just pick from full list
+                }
+
+                const shuffledWords = [...pool].sort(() => 0.5 - Math.random()).slice(0, GameData.WORDS_PER_ROUND);
+                
+                // Update used list
+                const newUsedWords = [...usedWords, ...shuffledWords];
 
                 this.net.updateState({
                     teams: { red: reds, blue: blues },
@@ -1346,6 +1364,7 @@
                     currentTurn: turnColor,
                     activePair: { giver: giverId, guesser: guesserId },
                     words: shuffledWords,
+                    usedWords: newUsedWords, // Save used words
                     currentWordIndex: 0,
                     correctCount: 0,
                     roundNumber: roundNum,
@@ -1451,6 +1470,20 @@
                 if (!data) return; // safety check
                 this.serverState = data;
                 const uid = this.net.user?.uid;
+
+                // --- NEW: Disconnect Safety Check (Host Only) ---
+                if (this.net.isHost && data.status === 'playing') {
+                    const giverId = data.activePair.giver;
+                    const guesserId = data.activePair.guesser;
+                    // Check if they are still in players map
+                    if (!data.players[giverId] || !data.players[guesserId]) {
+                        console.warn("Jogador ativo desconectou! Encerrando rodada.");
+                        this.net.updateState({
+                            status: 'result',
+                            lastEvent: 'gameover_' + Date.now() // Treat as gameover/force end
+                        });
+                    }
+                }
 
                 // Audio
                 if (data.lastEvent !== this.lastProcessedEvent) {
