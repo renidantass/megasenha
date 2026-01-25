@@ -1036,7 +1036,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, updateDoc, deleteField, arrayRemove, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, updateDoc, deleteField, arrayRemove, arrayUnion, deleteDoc, getDocs, query, where, or, and } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const customConfig =  {
             apiKey: "AIzaSyDoaWmTN2513e5LGxOq--65ekL4PMqjUAs",
@@ -1178,6 +1178,44 @@
                     await signOut(auth);
                     this.user = null;
                     alert("Identidade resetada. Agora você pode entrar como um novo jogador.");
+                }
+            }
+
+            async cleanupOldRooms() {
+                const now = Date.now();
+                const twoHoursAgo = now - (2 * 60 * 60 * 1000);
+                const sessionsRef = collection(db, 'mega_senha_sessions');
+
+                try {
+                    // Query: Salas com mais de 2 horas OU (Status waiting E (lastEvent created OU isPaused false))
+                    const q = query(sessionsRef, or(
+                        where("timestamp", "<", twoHoursAgo),
+                        and(
+                            where("status", "==", "waiting"),
+                            or(
+                                where("lastEvent", "==", "created"),
+                                where("isPaused", "==", false)
+                            )
+                        )
+                    ));
+
+                    const snapshot = await getDocs(q);
+                    
+                    snapshot.forEach(async (roomDoc) => {
+                        const data = roomDoc.data();
+                        const players = data.players || {};
+                        
+                        // Verificação final: Deleta se estiver vazia OU se o critério de tempo/status bater
+                        // (O players vazio é difícil filtrar via query pura, então checamos aqui)
+                        const isEmpty = Object.keys(players).length === 0;
+                        const isOld = (data.timestamp || 0) < twoHoursAgo;
+
+                        if (isEmpty || isOld || data.status === 'waiting') {
+                            await deleteDoc(doc(db, 'mega_senha_sessions', roomDoc.id));
+                        }
+                    });
+                } catch (e) {
+                    console.warn("Falha no cleanup:", e);
                 }
             }
 
@@ -1825,6 +1863,8 @@
                     this.addReaction(e.detail.msgId, e.detail.reaction);
                 });
 
+                this.net.cleanupOldRooms().catch(err => console.warn("Ocorreu um erro ao limpar as salas!"));
+                
                 window.addEventListener('beforeunload', () => this.net.leaveRoom());
             }
 
