@@ -1210,33 +1210,6 @@
                 this.isHost = false;
             }
 
-            async cleanupOldRooms() {
-                const now = Date.now();
-                const twoHours = 2 * 60 * 60 * 1000;
-                const sessionsRef = collection(db, 'mega_senha_sessions');
-                
-                try {
-                    // Nota: Idealmente você usaria uma query aqui, mas para garantir 
-                    // a limpeza de campos vazios (players: {}), pegamos o snapshot
-                    const snapshot = await getDoc(sessionsRef); // Ou use getDocs
-                    // Se usar getDocs (importar do firestore):
-                    // const snapshot = await getDocs(sessionsRef); 
-                    
-                    snapshot.forEach(async (roomDoc) => {
-                        const data = roomDoc.data();
-                        const players = data.players || {};
-                        const isOld = (now - (data.timestamp || 0)) > twoHours;
-                        const isEmpty = Object.keys(players).length === 0;
-
-                        if (isEmpty || isOld) {
-                            await deleteDoc(doc(db, 'mega_senha_sessions', roomDoc.id));
-                        }
-                    });
-                } catch (e) {
-                    console.warn("Cleanup silencioso ignorado (permissão ou rede).");
-                }
-            }
-
             async createRoom(nickname) {
                 await this.init();
                 if (!this.user) throw new Error("Não autenticado");
@@ -1853,8 +1826,6 @@
                 });
 
                 window.addEventListener('beforeunload', () => this.net.leaveRoom());
-
-                this.net.cleanupOldRooms();
             }
 
             checkUrlParams() {
