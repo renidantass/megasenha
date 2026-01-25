@@ -948,6 +948,10 @@ body {
     transition: all 0.3s ease;
 }
 
+#game-screen:not(.active) .game-header {
+    display: none;
+}
+
 [data-theme="light"] .game-header {
     background: rgba(248, 250, 252, 0.8);
     border-bottom-color: rgba(15, 23, 42, 0.1);
@@ -1503,7 +1507,7 @@ body {
     width: 100%;
     max-width: 700px;
     text-align: center;
-    margin: 6rem 1rem 2rem;
+    margin: 2rem 1rem 2rem;
     position: relative;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     transition: all 0.3s ease;
@@ -1943,6 +1947,21 @@ body {
     .rooms-screen-header h2 {
         font-size: 1.5rem;
     }
+
+    .current-word {
+        font-size: 2.5rem;
+        margin: 0.75rem 0;
+    }
+
+    .game-controls {
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .btn-game {
+        height: 100px;
+        font-size: 1.4rem;
+    }
 }
 
 /* --- FLOATING GAME CONTROLS (ESTILIZADO) --- */
@@ -2084,8 +2103,10 @@ body {
 /* Responsive */
 @media (max-width: 768px) {
     .floating-game-controls {
-        bottom: 20px;
-        left: 20px;
+        bottom: auto;
+        left: auto;
+        right: 20px;
+        top: 80px;
         gap: 10px;
     }
 
@@ -2114,5 +2135,75 @@ body {
         height: 70px;
         font-size: 1.8rem;
         border: 3px solid var(--primary-color);
+    }
+
+    .current-word {
+        font-size: 2rem;
+        margin: 0.5rem 0;
+    }
+
+    .game-controls {
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+    }
+
+    .btn-game {
+        height: 80px;
+        font-size: 1.2rem;
+        gap: 4px;
+    }
+
+    .word-card {
+        margin: 1.5rem 1rem 2rem;
+    }
+}
+
+@media (max-width: 390px) {
+    .current-word {
+        font-size: 1.5rem;
+        margin: 0.25rem 0;
+    }
+
+    .game-controls {
+        gap: 0.5rem;
+        margin-top: 0.25rem;
+        max-width: 100%;
+    }
+
+    .btn-game {
+        height: 70px;
+        font-size: 1rem;
+        gap: 2px;
+        padding: 8px;
+    }
+
+    .word-card {
+        padding: 1.5rem 1rem;
+        margin: 1rem 0.5rem 1.5rem;
+        max-width: 100%;
+    }
+
+    .btn-theme-toggle {
+        width: 45px;
+        height: 45px;
+        font-size: 1.4rem;
+        top: 10px;
+        right: 10px;
+    }
+
+    .timer-circle {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+
+    .scoreboard {
+        gap: 6px;
+    }
+
+    .score-box {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
     }
 }
