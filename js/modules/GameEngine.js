@@ -153,10 +153,10 @@ export class GameEngine {
     }
 
     generateRandomNick() {
-        const adj = NICK_DATA.adj[Math.floor(Math.random() * NICK_DATA.adj.length)];
-        const noun = NICK_DATA.noun[Math.floor(Math.random() * NICK_DATA.noun.length)];
+        const firstName = NICK_DATA.firstNames[Math.floor(Math.random() * NICK_DATA.firstNames.length)];
+        const lastName = NICK_DATA.lastNames[Math.floor(Math.random() * NICK_DATA.lastNames.length)];
         const num = Math.floor(Math.random() * 99) + 1;
-        return `${noun}${adj}${num}`;
+        return `${firstName} ${lastName} ${num}`;
     }
 
     getNick() {
