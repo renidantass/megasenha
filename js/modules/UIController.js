@@ -586,7 +586,8 @@ export class UIController {
             btn.textContent = '🔄 Reiniciar Agora';
             btn.onclick = () => {
                 this.loading.classList.remove('hidden');
-                window.location.reload(); // Simple manual reset fallback, or use game.resetGame via event
+                if (window.game) window.game.resetGame();
+                else window.location.reload();
             };
             // Better: Attach event listener in GameEngine
             this.hostResultActions.classList.remove('hidden');

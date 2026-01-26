@@ -18,4 +18,4 @@ if (!firebaseConfig.projectId) {
 }
 
 const app = initializeApp(firebaseConfig);
-new GameEngine(app);
+window.game = new GameEngine(app);
