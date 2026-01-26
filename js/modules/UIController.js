@@ -32,7 +32,7 @@ export class UIController {
         this.roomList = document.getElementById('room-list');
 
         // GUESS INPUT
-        this.guessInputContainer = document.getElementById('guess-container');
+        this.guessInputContainer = document.getElementById('guess-container') || document.createElement('div'); // Fallback safe
         const guessInput = document.getElementById('guess-input');
         if (guessInput) {
             guessInput.addEventListener('input', (e) => {
@@ -477,13 +477,13 @@ export class UIController {
                 if (this.cardWord) this.cardWord.textContent = currentWord;
             }
             if (this.hostControls) this.hostControls.classList.remove('hidden');
-            this.guessInputContainer.classList.add('hidden'); // Esconder input
+            if (this.guessInputContainer) this.guessInputContainer.classList.add('hidden'); // Esconder input
         } else if (role === 'guesser') {
             if (this.currentCard) this.currentCard.classList.add('hidden');
             if (this.hostControls) this.hostControls.classList.add('hidden');
 
             // MOSTRAR INPUT DE CHUTE
-            this.guessInputContainer.classList.remove('hidden');
+            if (this.guessInputContainer) this.guessInputContainer.classList.remove('hidden');
 
             // Focar no input se não estiver focado
             const input = document.getElementById('guess-input');
