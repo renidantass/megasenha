@@ -46,6 +46,7 @@ export class UIController {
         this.progressContainer = document.getElementById('progress-container');
 
         // Controls
+        this.gameControls = document.getElementById('game-controls'); // <--- MISSING INITIALIZATION
         this.hostControls = document.getElementById('host-controls');
         this.spectatorMsg = document.getElementById('spectator-msg');
         this.hostResultActions = document.getElementById('host-result-actions');
@@ -471,11 +472,11 @@ export class UIController {
         if (role === 'giver') {
             this.currentCard.classList.remove('hidden');
             this.cardWord.textContent = currentWord;
-            this.gameControls.classList.remove('hidden');
+            this.hostControls.classList.remove('hidden'); // Was this.gameControls
             this.guessInputContainer.classList.add('hidden'); // Esconder input
         } else if (role === 'guesser') {
             this.currentCard.classList.add('hidden');
-            this.gameControls.classList.add('hidden');
+            this.hostControls.classList.add('hidden');
 
             // MOSTRAR INPUT DE CHUTE
             this.guessInputContainer.classList.remove('hidden');
@@ -488,7 +489,7 @@ export class UIController {
 
         } else {
             this.currentCard.classList.add('hidden');
-            this.gameControls.classList.add('hidden');
+            this.hostControls.classList.add('hidden');
             this.guessInputContainer.classList.add('hidden');
         }
 

@@ -575,6 +575,44 @@ export class GameEngine {
         }
     }
 
+
+    async resetGame() {
+        if (!this.serverState) return;
+
+        // Limpar timer se existir
+        if (this.resetTimer) {
+            clearTimeout(this.resetTimer);
+            this.resetTimer = null;
+        }
+
+        // Embaralhar jogadores entre times Red/Blue
+        const allPlayers = [...(this.serverState.teams.red || []), ...(this.serverState.teams.blue || [])];
+        const shuffled = allPlayers.sort(() => Math.random() - 0.5);
+
+        const mid = Math.ceil(shuffled.length / 2);
+        const redTeam = shuffled.slice(0, mid);
+        const blueTeam = shuffled.slice(mid);
+
+        const newState = {
+            status: 'waiting',
+            scores: { red: 0, blue: 0, green: 0, purple: 0 },
+            teams: {
+                ...this.serverState.teams,
+                red: redTeam,
+                blue: blueTeam
+            },
+            currentTurn: 'red',
+            roundNumber: 0,
+            activePair: { giver: null, guesser: null },
+            teamHistory: {},
+            lastEvent: 'reset_' + Date.now(),
+            correctCount: 0,
+            currentWordIndex: 0
+        };
+
+        await this.net.updateState(newState);
+    }
+
     async quit() {
         if (this.localTimer) clearInterval(this.localTimer);
         if (this.transitionTimer) clearInterval(this.transitionTimer);
