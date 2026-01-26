@@ -2573,6 +2573,11 @@ body {
 }
 
 @media (max-width: 480px) {
+    .virtual-keyboard {
+        display: none !important;
+        /* User requested: hide game keyboard on mobile */
+    }
+
     .key-btn {
         height: 50px;
         font-size: 1.1rem;

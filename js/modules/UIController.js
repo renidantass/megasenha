@@ -37,6 +37,15 @@ export class UIController {
         if (guessInput) {
             // Manter foco no input sempre que possível para Desktop
             this.guessInputContainer.onclick = () => guessInput.focus();
+            // Ensure touch also triggers focus for native keyboard on mobile
+            this.guessInputContainer.ontouchend = (e) => {
+                // Prevent default only if it's not the input itself to avoid issues?
+                // actually, we just want to ensure focus.
+                if (e.target !== guessInput) {
+                    e.preventDefault();
+                    guessInput.focus();
+                }
+            };
 
             guessInput.addEventListener('input', (e) => {
                 const val = e.target.value.toUpperCase(); // Força upper
