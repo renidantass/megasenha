@@ -123,6 +123,8 @@ export class GameEngine {
                 const uid = btn.dataset.uid;
                 if (btn.classList.contains('btn-kick')) {
                     if (confirm("Expulsar jogador?")) this.net.kickPlayer(uid);
+                } else if (btn.classList.contains('btn-make-host')) {
+                    if (confirm("Passar o controle de Host para este jogador?")) this.net.promoteNewHost(uid);
                 } else {
                     const target = btn.dataset.target;
                     this.net.switchPlayerTeam(uid, target);
