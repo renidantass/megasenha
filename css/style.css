@@ -2786,3 +2786,8 @@ body {
         border-bottom-width: 3px;
     }
 }
+
+
+#menu-screen>.menu-card {
+    margin-top: 10px;
+}
