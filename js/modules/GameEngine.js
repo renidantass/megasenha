@@ -246,27 +246,6 @@ export class GameEngine {
         }
     }
 
-    showResult(teamColor, score) {
-        const teamName = teamColor === 'red' ? 'VERMELHO' : 'AZUL';
-        const resultEl = document.getElementById('result-title');
-        const msgEl = document.getElementById('result-msg');
-        
-        resultEl.textContent = `FIM DA RODADA`;
-        msgEl.textContent = `Time ${teamName} terminou com ${score} ponto${score !== 1 ? 's' : ''}!`;
-        
-        this.ui.showScreen('result');
-        
-        let countdown = 5;
-        const timer = setInterval(() => {
-            countdown--;
-            document.getElementById('transition-timer').textContent = countdown;
-            
-            if (countdown <= 0) {
-                clearInterval(timer);
-                this.nextRound();
-            }
-        }, 1000);
-    }
 
     async startMatch() {
         if (!this.serverState || !this.serverState.players) return;
@@ -484,7 +463,7 @@ export class GameEngine {
             updateData.status = 'result';
             updateData.lastEvent = 'round_end_' + Date.now();
             this.net.updateState(updateData);
-            this.showResult(currentTeam, newScore);
+
         } else {
             updateData.lastEvent = 'correct_' + Date.now();
             // ⚠️ OTIMIZADO: updateState já faz debounce interno
@@ -511,7 +490,7 @@ export class GameEngine {
             updateData.status = 'result';
             updateData.lastEvent = 'round_end_' + Date.now();
             this.net.updateState(updateData);
-            this.showResult(this.serverState.currentTurn, this.serverState.scores[this.serverState.currentTurn]);
+
         } else {
             // ⚠️ OTIMIZADO: updateState já faz debounce interno
             this.net.updateState(updateData);
