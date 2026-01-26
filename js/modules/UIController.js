@@ -171,7 +171,7 @@ export class UIController {
             }
         }
 
-        if (screenName === 'menu') {
+        if (screenName === 'menu' || screenName === 'rooms') {
             this.sidebar.classList.add('hidden-sidebar');
             this.chatBtn.classList.add('hidden');
             this.chatWindow.classList.remove('open');
