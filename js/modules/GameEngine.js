@@ -22,13 +22,13 @@ export class GameEngine {
         this.localLastTick = 0;
         this.stateUpdateQueue = null;
         this.stateUpdateTimer = null;
-        
+
         this.bindEvents();
         this.initNick();
         this.checkUrlParams();
-        
+
         document.getElementById('btn-sound').textContent = this.audio.enabled ? '🔊 Sons Ligados' : '🔇 Sons Desligados';
-        
+
         document.addEventListener('add-reaction', (e) => {
             this.addReaction(e.detail.msgId, e.detail.reaction);
         });
@@ -54,12 +54,12 @@ export class GameEngine {
         document.getElementById('btn-correct').onclick = () => this.actionCorrect();
         document.getElementById('btn-quit').onclick = () => this.quit();
         document.getElementById('btn-menu-return').onclick = () => this.quit();
-        
+
         // BROWSE ROOMS
         document.getElementById('btn-browse-rooms').onclick = () => this.showRoomList();
         document.getElementById('btn-back-from-rooms').onclick = () => this.ui.showScreen('menu');
         document.getElementById('btn-refresh-rooms').onclick = () => this.showRoomList();
-        
+
         document.getElementById('btn-sound').onclick = (e) => {
             const en = this.audio.toggle();
             e.target.textContent = en ? '🔊 Sons Ligados' : '🔇 Sons Desligados';
@@ -69,9 +69,9 @@ export class GameEngine {
         document.getElementById('btn-toggle-theme').onclick = () => {
             this.theme.toggle();
         };
-        
+
         document.getElementById('btn-force-reset').onclick = () => this.net.forceNewIdentity();
-        
+
         document.getElementById('btn-refresh-nick').onclick = () => {
             const newNick = this.generateRandomNick();
             document.getElementById('input-nickname').value = newNick;
@@ -80,14 +80,14 @@ export class GameEngine {
         document.getElementById('btn-copy-url').onclick = () => {
             const input = document.getElementById('share-url');
             input.select();
-            input.setSelectionRange(0, 99999); 
+            input.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(input.value).then(() => {
                 const originalText = document.getElementById('btn-copy-url').textContent;
                 document.getElementById('btn-copy-url').textContent = "✅";
                 setTimeout(() => document.getElementById('btn-copy-url').textContent = originalText, 2000);
             });
         };
-        
+
         // RULES
         document.getElementById('btn-open-rules').onclick = () => this.ui.toggleRules(true);
         document.getElementById('btn-close-rules').onclick = () => this.ui.toggleRules(false);
@@ -95,7 +95,7 @@ export class GameEngine {
         // HOST CONTROLS
         document.getElementById('btn-swap-intro').onclick = () => this.hostSwapRoles();
         document.getElementById('btn-swap-game').onclick = () => this.hostSwapRoles();
-        document.getElementById('btn-pause-game').onclick = () => this.hostTogglePause(); 
+        document.getElementById('btn-pause-game').onclick = () => this.hostTogglePause();
         document.getElementById('btn-resume-overlay').onclick = () => this.hostTogglePause();
 
         // CHAT EVENTS
@@ -106,13 +106,13 @@ export class GameEngine {
             if (e.key === 'Enter') this.sendChat();
         };
         document.getElementById('btn-emoji-picker').onclick = () => this.ui.toggleEmojiPicker();
-        
+
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.reaction-menu') && !e.target.closest('.chat-message')) {
                 document.getElementById('reaction-menu').classList.add('hidden');
             }
             if (!e.target.closest('.emoji-picker') && !e.target.closest('#btn-emoji-picker')) {
-                 document.getElementById('emoji-picker').classList.add('hidden');
+                document.getElementById('emoji-picker').classList.add('hidden');
             }
         });
 
@@ -122,7 +122,7 @@ export class GameEngine {
             if (btn && this.net.isHost) {
                 const uid = btn.dataset.uid;
                 if (btn.classList.contains('btn-kick')) {
-                    if(confirm("Expulsar jogador?")) this.net.kickPlayer(uid);
+                    if (confirm("Expulsar jogador?")) this.net.kickPlayer(uid);
                 } else {
                     const target = btn.dataset.target;
                     this.net.switchPlayerTeam(uid, target);
@@ -169,23 +169,23 @@ export class GameEngine {
     sendChat() {
         const input = document.getElementById('chat-input');
         const text = input.value.trim();
-        if(!text) return;
-        
+        if (!text) return;
+
         const nick = document.getElementById('input-nickname').value || 'Anônimo';
         this.net.sendChatMessage(text, nick);
         input.value = '';
     }
-    
+
     async addReaction(msgId, emoji) {
-        if(!msgId) return;
+        if (!msgId) return;
         const msgs = this.serverState.messages || [];
         const updatedMsgs = msgs.map(m => {
-            if(m.id === msgId) {
-                if(!m.reactions) m.reactions = {};
-                if(!m.reactions[emoji]) m.reactions[emoji] = [];
-                
+            if (m.id === msgId) {
+                if (!m.reactions) m.reactions = {};
+                if (!m.reactions[emoji]) m.reactions[emoji] = [];
+
                 const uid = this.net.user.uid;
-                if(m.reactions[emoji].includes(uid)) {
+                if (m.reactions[emoji].includes(uid)) {
                     m.reactions[emoji] = m.reactions[emoji].filter(u => u !== uid);
                 } else {
                     m.reactions[emoji].push(uid);
@@ -205,7 +205,7 @@ export class GameEngine {
         try {
             await this.net.createRoom(nick);
             this.ui.updateLobby(true, this.net.roomId);
-        } catch(e) { alert(e.message); }
+        } catch (e) { alert(e.message); }
         this.ui.toggleLoading(false);
     }
 
@@ -216,13 +216,13 @@ export class GameEngine {
         if (!nick) return;
         const code = document.getElementById('input-room-code').value.trim().toUpperCase();
         if (code.length !== 4) return alert("Código inválido");
-        
+
         this.ui.toggleLoading(true);
         try {
             const ok = await this.net.joinRoom(code, nick);
             if (!ok) alert("Sala não encontrada");
             else this.ui.updateLobby(false, code);
-        } catch(e) {
+        } catch (e) {
             alert("Erro ao entrar: " + e.message);
         } finally {
             this.ui.toggleLoading(false);
@@ -277,7 +277,7 @@ export class GameEngine {
             // Validar que os times têm jogadores
             const validTeams = {};
             const validActiveTeams = [];
-            
+
             for (const team of activeTeams) {
                 if (teams[team] && teams[team].length > 0) {
                     validTeams[team] = teams[team];
@@ -294,8 +294,8 @@ export class GameEngine {
             }
 
             // Se o time atual não é válido, usar o primeiro válido
-            let actualTeam = validActiveTeams.includes(currentTeamColor) 
-                ? currentTeamColor 
+            let actualTeam = validActiveTeams.includes(currentTeamColor)
+                ? currentTeamColor
                 : validActiveTeams[0];
 
             // Preparar estado para a dupla
@@ -347,6 +347,10 @@ export class GameEngine {
                     reserve,
                     duoInfo.rotatedOut
                 );
+            } else {
+                // Se não houve troca com reserva global, rotacionar internamente o time
+                const rotatedTeam = this.teamManager.rotateTeamInternal(validTeams[actualTeam]);
+                updatedTeams[actualTeam] = rotatedTeam;
             }
 
             this.net.updateState({
@@ -409,7 +413,7 @@ export class GameEngine {
 
         try {
             await this.net.updateState({ activePair: newPair });
-        } catch(e) {
+        } catch (e) {
             console.error("Swap Error", e);
         }
     }
@@ -417,34 +421,34 @@ export class GameEngine {
     async hostTogglePause() {
         if (!this.net.isHost) return;
         const s = this.serverState;
-        
+
         if (s.isPaused) {
             const remaining = s.timeRemainingWhenPaused || GameData.ROUND_TIME;
             const newStartTime = Date.now() - ((GameData.ROUND_TIME - remaining) * 1000);
-            
+
             try {
                 await this.net.updateState({
                     isPaused: false,
                     roundStartTime: newStartTime
                 });
-            } catch(e) { console.error("Resume Error", e); }
-            
+            } catch (e) { console.error("Resume Error", e); }
+
         } else {
             const elapsed = (Date.now() - s.roundStartTime) / 1000;
             const remaining = Math.max(0, GameData.ROUND_TIME - elapsed);
-            
+
             try {
                 await this.net.updateState({
                     isPaused: true,
                     timeRemainingWhenPaused: remaining
                 });
-            } catch(e) { console.error("Pause Error", e); }
+            } catch (e) { console.error("Pause Error", e); }
         }
     }
 
     async actionCorrect() {
         if (!this.serverState) return;
-        
+
         const currentTeam = this.serverState.currentTurn;
         const newScore = (this.serverState.scores[currentTeam] || 0) + 1;
         const nextWordIndex = this.serverState.currentWordIndex + 1;
@@ -473,14 +477,14 @@ export class GameEngine {
 
     async actionPass() {
         if (!this.serverState) return;
-        
+
         const currentWordIndex = this.serverState.currentWordIndex;
         const currentWord = this.serverState.words[currentWordIndex];
-        
+
         const words = [...this.serverState.words];
         words.splice(currentWordIndex, 1);
         words.push(currentWord);
-        
+
         const updateData = {
             words: words,
             lastEvent: 'pass_' + Date.now()
@@ -498,8 +502,8 @@ export class GameEngine {
     }
 
     async quit() {
-        if(this.localTimer) clearInterval(this.localTimer);
-        if(this.transitionTimer) clearInterval(this.transitionTimer);
+        if (this.localTimer) clearInterval(this.localTimer);
+        if (this.transitionTimer) clearInterval(this.transitionTimer);
         await this.net.leaveRoom();
         this.ui.showScreen('menu');
     }
@@ -511,9 +515,9 @@ export class GameEngine {
 
         // Se o jogador foi removido da sala, voltar ao menu
         if (uid && !data.players[uid] && this.net.roomId) {
-             alert("Você foi removido da sala.");
-             this.quit();
-             return;
+            alert("Você foi removido da sala.");
+            this.quit();
+            return;
         }
 
         this.net.isHost = (data.hostId === uid);
@@ -557,7 +561,7 @@ export class GameEngine {
 
         if (data.lastEvent !== this.lastProcessedEvent) {
             const evt = data.lastEvent.split('_')[0];
-            if(['intro','start','correct','pass','win','gameover'].includes(evt)) this.audio.play(evt);
+            if (['intro', 'start', 'correct', 'pass', 'win', 'gameover'].includes(evt)) this.audio.play(evt);
             this.lastProcessedEvent = data.lastEvent;
         }
 
@@ -567,10 +571,10 @@ export class GameEngine {
         document.getElementById('waiting-room-code').textContent = this.net.roomId;
         this.ui.togglePauseOverlay(data.isPaused && data.status === 'playing');
 
-        if(this.transitionTimer) clearInterval(this.transitionTimer);
+        if (this.transitionTimer) clearInterval(this.transitionTimer);
 
         if (data.status === 'waiting') {
-            if(this.net.isHost) this.ui.updateLobby(true, this.net.roomId);
+            if (this.net.isHost) this.ui.updateLobby(true, this.net.roomId);
             else this.ui.updateLobby(false, this.net.roomId);
             this.ui.showScreen('waiting');
             return;
@@ -585,19 +589,19 @@ export class GameEngine {
         if (data.status === 'playing') {
             this.ui.updateGameUI(data, uid, this.net.isHost, GameData);
             this.ui.showScreen('game');
-            
-            if(this.localTimer) clearInterval(this.localTimer);
-            
+
+            if (this.localTimer) clearInterval(this.localTimer);
+
             const tick = () => {
                 if (data.isPaused) {
                     this.ui.updateTimer(Math.ceil(data.timeRemainingWhenPaused));
-                    return; 
+                    return;
                 }
 
                 const elapsed = (Date.now() - data.roundStartTime) / 1000;
                 const rem = Math.ceil(GameData.ROUND_TIME - elapsed);
                 this.ui.updateTimer(rem);
-                
+
                 if (rem <= 10 && rem > 0 && Math.floor(elapsed) !== this.localLastTick) {
                     this.audio.play('tick');
                     this.localLastTick = Math.floor(elapsed);
@@ -616,12 +620,12 @@ export class GameEngine {
         }
 
         if (data.status === 'result') {
-            if(this.localTimer) clearInterval(this.localTimer);
+            if (this.localTimer) clearInterval(this.localTimer);
             this.ui.togglePauseOverlay(false);
             const title = document.getElementById('result-title');
             const msg = document.getElementById('result-msg');
             const isRed = data.currentTurn === 'red';
-            
+
             title.textContent = `TIME ${isRed ? 'VERMELHO' : 'AZUL'} TERMINOU`;
             title.style.color = isRed ? 'var(--team-red)' : 'var(--team-blue)';
             msg.textContent = `Acertaram ${data.correctCount} palavras.`;
@@ -629,7 +633,7 @@ export class GameEngine {
             const transitionDisplay = document.getElementById('transition-timer');
             let countdown = 5;
             transitionDisplay.textContent = countdown;
-            
+
             this.transitionTimer = setInterval(() => {
                 countdown--;
                 transitionDisplay.textContent = countdown;
@@ -640,7 +644,7 @@ export class GameEngine {
                     }
                 }
             }, 1000);
-            
+
             this.ui.showScreen('result');
         }
     }

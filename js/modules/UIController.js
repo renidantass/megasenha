@@ -339,6 +339,10 @@ export class UIController {
                     if (otherTeam) {
                         actions += `<button class="btn-move-team" data-uid="${uid}" data-target="${otherTeam}" title="Mover para ${otherTeam}">⇄</button>`;
                     }
+                } else if (!userTeam) {
+                    // Jogador sem time (Lobby) -> Opções de mover para Red/Blue
+                    actions += `<button class="btn-move-team" data-uid="${uid}" data-target="red" title="Mover para Vermelho" style="color:var(--team-red)">🔴</button>`;
+                    actions += `<button class="btn-move-team" data-uid="${uid}" data-target="blue" title="Mover para Azul" style="color:var(--team-blue)">🔵</button>`;
                 }
             }
 

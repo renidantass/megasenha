@@ -13,17 +13,12 @@ export class TeamManager {
         const totalPlayers = playerIds.length;
         const hasReserve = totalPlayers % 2 !== 0;
         const actualPlayers = hasReserve ? totalPlayers - 1 : totalPlayers;
-        
+
         // Embaralhar jogadores
         const shuffled = [...playerIds].sort(() => Math.random() - 0.5);
 
-        // Determinar quantos times precisamos
-        // 2 jogadores = 1 time (red)
-        // 3 jogadores = 1 time (red) + 1 reserve
-        // 4 jogadores = 2 times (red, blue)
-        // 5 jogadores = 2 times (red, blue) + 1 reserve
-        // 6+ jogadores = múltiplos times
-        const numTeams = Math.max(1, Math.ceil(actualPlayers / 2));
+        // Sempre 2 times (Red/Blue) para 4 ou mais jogadores
+        const numTeams = totalPlayers >= 4 ? 2 : Math.max(1, Math.ceil(actualPlayers / 2));
 
         // Inicializar times
         const teams = {};
@@ -74,7 +69,7 @@ export class TeamManager {
         if (teamPlayers.length === 1 && state.reserve) {
             const giver = teamPlayers[0];
             const guesser = state.reserve;
-            
+
             return {
                 giver,
                 guesser,
@@ -89,7 +84,7 @@ export class TeamManager {
 
         // Obter histórico de papéis deste time para intercalar
         const teamHistory = state.teamHistory?.[currentTeam] || {};
-        
+
         // Encontrar quem foi giver e quem foi guesser na última vez
         const lastGiver = teamHistory.lastGiver;
         const lastGuesser = teamHistory.lastGuesser;
@@ -159,6 +154,15 @@ export class TeamManager {
         }
 
         return updatedTeams;
+    }
+
+    /**
+     * Rotaciona internamente o time (move o primeiro par para o final)
+     */
+    rotateTeamInternal(teamArray) {
+        if (!teamArray || teamArray.length <= 2) return teamArray;
+        // Move os dois primeiros (giver/guesser) para o final
+        return [...teamArray.slice(2), teamArray[0], teamArray[1]];
     }
 
     getTeamColor(teamIndex) {
