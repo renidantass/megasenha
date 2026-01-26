@@ -70,8 +70,6 @@ export class GameEngine {
             this.theme.toggle();
         };
 
-        document.getElementById('btn-force-reset').onclick = () => this.net.forceNewIdentity();
-
         document.getElementById('btn-refresh-nick').onclick = () => {
             const newNick = this.generateRandomNick();
             document.getElementById('input-nickname').value = newNick;
