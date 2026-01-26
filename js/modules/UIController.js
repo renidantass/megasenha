@@ -576,7 +576,8 @@ export class UIController {
             this.spectatorMsg.classList.add('hidden');
         } else if (isGuesser) {
             // Ocultar a palavra para quem tenta adivinhar
-            this.elWord.textContent = "???";
+            // this.elWord.textContent = "???"; <--- REMOVED
+            this.renderMaskedWord(currentWord, this.elWord); // Render slots in main card
             this.elWord.style.color = "#60a5fa";
             this.roleDisplay.textContent = "🎯 Tente adivinhar a palavra!";
             this.roleDisplay.classList.add('guesser');
@@ -703,11 +704,46 @@ export class UIController {
         }
     }
 
+    // Method to render static masked slots (like "???", but with slots)
+    renderMaskedWord(word, container) {
+        if (!container) return;
+        container.innerHTML = '';
+
+        // Use a wrapper to keep layout consistent with input slots
+        const wrapper = document.createElement('div');
+        wrapper.className = 'guess-slots-container'; // Reuse same flex style
+        wrapper.style.pointerEvents = 'none'; // Static display
+
+        const chars = word.split('');
+        chars.forEach(char => {
+            const slot = document.createElement('div');
+            slot.className = 'letter-slot';
+            // Important: Main display slots usually shouldn't toggle active state,
+            // but we want the same "look".
+
+            // Normalize to check if it's a letter (e.g. Ç -> C)
+            const baseChar = char.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            // If strictly NOT alphanumeric after normalization, it's a spacer (hyphen, space, etc)
+            if (/[^A-Za-z0-9]/.test(baseChar)) {
+                slot.textContent = char;
+                slot.classList.add('spacer');
+            } else {
+                slot.textContent = '';
+            }
+            wrapper.appendChild(slot);
+        });
+
+        container.appendChild(wrapper);
+    }
+
     renderGuessSlots(word) {
         const container = document.getElementById('guess-slots');
         if (!container) return;
 
         container.innerHTML = '';
+
+        // Assumindo que 'word' tem o tamanho correto.
         const chars = word.split('');
 
         chars.forEach((char, index) => {
@@ -715,8 +751,11 @@ export class UIController {
             slot.className = 'letter-slot';
             slot.dataset.index = index;
 
-            // Se for caractere especial (hífen, espaço)
-            if (/[^A-Za-z0-9]/.test(char)) {
+            // Normalize to check if it's a letter (e.g. Ç -> C)
+            const baseChar = char.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            // Se for caractere especial REAL (hífen, espaço)
+            if (/[^A-Za-z0-9]/.test(baseChar)) {
                 slot.textContent = char;
                 slot.classList.add('spacer');
             } else {
