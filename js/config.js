@@ -1,3 +1,5 @@
+import { EXTRA_WORDS } from "./wordList.js";
+
 export const GameData = {
     WORDS: [
         // Originais
@@ -78,7 +80,8 @@ export const GameData = {
         "PILHA", "BATERIA", "TOMADA", "INTERRUPTOR", "LÂMPADA", "ABAJUR", "LANTERNA", "FAROL", "VELA", "FOGUEIRA",
         "GUITARRA", "VIOLÃO", "BAIXO", "BATERIA", "PIANO", "TECLADO", "SAXOFONE", "TROMPETE", "FLAUTA", "VIOLINO",
         "TAMBOR", "PANDEIRO", "BERIMBAU", "CURIOSIDADE", "SAUDADE", "AMIZADE", "FELICIDADE", "TRISTEZA", "RAIVA", "MEDO",
-        "CORAGEM", "ESPERANÇA", "FÉ", "AMOR", "PAIXÃO", "ÓDIO", "INVEJA", "ORGULHO", "PREGUIÇA", "GULA"
+        "CORAGEM", "ESPERANÇA", "FÉ", "AMOR", "PAIXÃO", "ÓDIO", "INVEJA", "ORGULHO", "PREGUIÇA", "GULA",
+        ...EXTRA_WORDS
     ],
     WORDS_PER_ROUND: 5,
     ROUND_TIME: 90,
