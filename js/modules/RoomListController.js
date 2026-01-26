@@ -26,11 +26,11 @@ export class RoomListController {
             }
 
             console.log("Buscando salas com status 'waiting'...");
-            
+
             const sessionsRef = collection(this.db, 'mega_senha_sessions');
-            // ⚠️ OTIMIZADO: Query específica para status waiting
-            const q = query(sessionsRef, where("status", "==", "waiting"));
-            
+            // ⚠️ OTIMIZADO: Query para status waiting e playing
+            const q = query(sessionsRef, where("status", "in", ["waiting", "intro", "playing", "result"]));
+
             const snapshot = await getDocs(q);
             this.rooms = [];
             this.lastFetchTime = now;
@@ -45,7 +45,7 @@ export class RoomListController {
             snapshot.forEach(doc => {
                 try {
                     const data = doc.data();
-                    
+
                     if (!data || typeof data !== 'object') {
                         console.warn(`Sala ${doc.id} tem dados inválidos`);
                         return;
@@ -53,10 +53,10 @@ export class RoomListController {
 
                     const players = data.players || {};
                     const playerCount = Object.keys(players).length;
-                    
+
                     if (playerCount > 0) {
                         const hostPlayer = Object.values(players).find(p => p && p.role === 'host');
-                        
+
                         const room = {
                             code: doc.id,
                             hostName: hostPlayer?.nickname || 'Anônimo',
@@ -65,7 +65,7 @@ export class RoomListController {
                             scores: data.scores || { red: 0, blue: 0 },
                             status: data.status || 'waiting'
                         };
-                        
+
                         this.rooms.push(room);
                     }
                 } catch (docError) {
@@ -74,7 +74,7 @@ export class RoomListController {
             });
 
             this.rooms.sort((a, b) => b.createdAt - a.createdAt);
-            
+
             console.log(`Total de salas disponíveis: ${this.rooms.length}`);
             return this.rooms;
         } catch (e) {

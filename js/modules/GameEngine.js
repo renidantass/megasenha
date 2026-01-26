@@ -392,9 +392,39 @@ export class GameEngine {
 
         const nextRoundNum = this.serverState.roundNumber + 1;
 
+        // 1. Identificar jogadores sem time
+        const allPlayers = Object.keys(this.serverState.players || {});
+        let teams = JSON.parse(JSON.stringify(this.serverState.teams || { red: [], blue: [] }));
+
+        // Coleta jogadores já nos times
+        const assignedPlayers = new Set();
+        Object.values(teams).forEach(arr => arr.forEach(uid => assignedPlayers.add(uid)));
+
+        // Unassigned
+        const unassigned = allPlayers.filter(uid => !assignedPlayers.has(uid));
+
+        if (unassigned.length > 0) {
+            console.log("Distribuindo novos jogadores:", unassigned);
+            // 2. Distribuir para manter equilíbrio
+            // Tenta manter qtd igual. Se ímpar, sobra 1.
+            let redCount = teams.red.length;
+            let blueCount = teams.blue.length;
+
+            unassigned.forEach(uid => {
+                if (redCount <= blueCount) {
+                    teams.red.push(uid);
+                    redCount++;
+                } else {
+                    teams.blue.push(uid);
+                    blueCount++;
+                }
+            });
+            // O unassigned agora está 'distribuído' nas listas locais 'teams'
+        }
+
         this.setupRound(
             nextTeam,
-            this.serverState.teams,
+            teams,
             this.serverState.reserve,
             currentTeams,
             nextRoundNum
