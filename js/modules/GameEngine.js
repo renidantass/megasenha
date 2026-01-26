@@ -251,6 +251,24 @@ export class GameEngine {
     }
 
 
+    async checkGuess(input) {
+        if (!this.serverState || !input) return;
+
+        const currentWordIndex = this.serverState.currentWordIndex;
+        const words = this.serverState.words || [];
+        if (currentWordIndex >= words.length) return;
+
+        const target = words[currentWordIndex];
+
+        // Normalize: Upper, NFD (accents), remove diacritics
+        const normalize = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+
+        if (normalize(input) === normalize(target)) {
+            this.actionCorrect();
+            this.ui.clearGuessInput(); // Limpar input na UI
+        }
+    }
+
     async startMatch() {
         if (!this.serverState || !this.serverState.players) return;
         const players = Object.keys(this.serverState.players);

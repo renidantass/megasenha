@@ -28,6 +28,17 @@ export class UIController {
         this.scoreRed = document.getElementById('score-red');
         this.scoreBlue = document.getElementById('score-blue');
         this.turnIndicator = document.getElementById('turn-indicator');
+        this.roomListContainer = document.getElementById('room-list-container');
+        this.roomList = document.getElementById('room-list');
+
+        // GUESS INPUT
+        this.guessInputContainer = document.getElementById('guess-container');
+        const guessInput = document.getElementById('guess-input');
+        if (guessInput) {
+            guessInput.addEventListener('input', (e) => {
+                if (window.game) window.game.checkGuess(e.target.value);
+            });
+        }
         this.wordCard = document.getElementById('game-word-container');
         this.elWord = document.getElementById('word-display');
         this.roleDisplay = document.getElementById('role-display');
@@ -441,13 +452,45 @@ export class UIController {
         } else {
             this.btnSwapGame.classList.add('hidden');
             this.btnPauseGame.classList.add('hidden');
-            this.btnResumeOverlay.classList.add('hidden');
             const skipBtn = document.getElementById('btn-skip-round');
             if (skipBtn) skipBtn.classList.add('hidden');
+            this.btnResumeOverlay.classList.add('hidden');
         }
 
         const isGiver = state.activePair.giver === currentUserId;
         const isGuesser = state.activePair.guesser === currentUserId;
+        const isSpectator = !isGiver && !isGuesser;
+
+        // Determine the role for the current user
+        let role = 'spectator';
+        if (isGiver) role = 'giver';
+        else if (isGuesser) role = 'guesser';
+
+        const currentWord = state.words[state.currentWordIndex];
+
+        if (role === 'giver') {
+            this.currentCard.classList.remove('hidden');
+            this.cardWord.textContent = currentWord;
+            this.gameControls.classList.remove('hidden');
+            this.guessInputContainer.classList.add('hidden'); // Esconder input
+        } else if (role === 'guesser') {
+            this.currentCard.classList.add('hidden');
+            this.gameControls.classList.add('hidden');
+
+            // MOSTRAR INPUT DE CHUTE
+            this.guessInputContainer.classList.remove('hidden');
+
+            // Focar no input se não estiver focado
+            const input = document.getElementById('guess-input');
+            if (input && document.activeElement !== input) {
+                input.focus();
+            }
+
+        } else {
+            this.currentCard.classList.add('hidden');
+            this.gameControls.classList.add('hidden');
+            this.guessInputContainer.classList.add('hidden');
+        }
 
         console.log("Atualizar Interface do Jogo:", {
             isGiver,
