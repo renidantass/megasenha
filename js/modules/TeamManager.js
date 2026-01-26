@@ -92,12 +92,15 @@ export class TeamManager {
         let giver, guesser;
 
         // Lógica para alternar papéis
-        if (lastGiver && lastGuesser && teamPlayers.includes(lastGiver) && teamPlayers.includes(lastGuesser)) {
+        // Lógica para alternar papéis
+        // Se temos apenas 2 jogadores, invertemos os papéis
+        // Se temos mais de 2, seguimos a ordem da lista (que já é rotacionada externamente)
+        if (teamPlayers.length === 2 && lastGiver && lastGuesser && teamPlayers.includes(lastGiver) && teamPlayers.includes(lastGuesser)) {
             // Inverter os papéis se ambos ainda estão no time
             giver = lastGuesser;
             guesser = lastGiver;
         } else {
-            // Seleção sequencial se é primeira vez ou jogadores saíram
+            // Seleção sequencial para times > 2 ou primeira rodada
             giver = teamPlayers[0];
             guesser = teamPlayers[1];
         }
