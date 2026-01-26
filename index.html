@@ -252,8 +252,19 @@
         </div>
 
         <!-- AREA DE CHUTE (INPUT) -->
-        <div id="guess-container" class="guess-input-container hidden">
-             <input type="text" id="guess-input" placeholder="DIGITE SEU PALPITE..." autocomplete="off">
+        <!-- AREA DE CHUTE (INPUT) -->
+        <!-- AREA DE CHUTE (INPUT) -->
+        <!-- AREA DE CHUTE (INPUT) -->
+        <div id="guess-container" class="guess-input-container hidden" style="flex-direction: column; gap: 15px; align-items: center;">
+             <div class="guess-wrapper">
+                 <input type="text" id="guess-input" class="guess-hidden-input" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+                 <div id="guess-slots" class="guess-slots-container"></div>
+             </div>
+             
+             <!-- TECLADO VIRTUAL -->
+             <div id="virtual-keyboard" class="virtual-keyboard"></div>
+             
+             <div style="font-size: 0.8rem; opacity: 0.7; margin-top: -10px;">(Use o teclado acima ou digite)</div>
         </div>
 
         <!-- CONTROLES ATIVOS DO DADOR DE DICAS -->

@@ -35,8 +35,33 @@ export class UIController {
         this.guessInputContainer = document.getElementById('guess-container') || document.createElement('div'); // Fallback safe
         const guessInput = document.getElementById('guess-input');
         if (guessInput) {
+            // Manter foco no input sempre que possível para Desktop
+            this.guessInputContainer.onclick = () => guessInput.focus();
+
             guessInput.addEventListener('input', (e) => {
-                if (window.game) window.game.checkGuess(e.target.value);
+                const val = e.target.value.toUpperCase(); // Força upper
+                // Limpar input real rapidinho para evitar "double text" se o CSS falhar? 
+                // Melhor: manter syncado.
+                // e.target.value = val; 
+
+                if (window.game) {
+                    window.game.ui.updateGuessSlots(val); // Atualiza visual
+                    window.game.checkGuess(val); // Checa vitória
+                }
+            });
+
+            // Prevent form submission defaults
+            guessInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (window.game) window.game.checkGuess(guessInput.value);
+                }
+            });
+        }
+        const btnConfirmGuess = document.getElementById('btn-confirm-guess');
+        if (btnConfirmGuess) {
+            btnConfirmGuess.addEventListener('click', () => {
+                if (guessInput && window.game) window.game.checkGuess(guessInput.value);
             });
         }
         this.currentCard = document.getElementById('game-word-container'); // ALIAS para wordCard
@@ -474,16 +499,36 @@ export class UIController {
         if (role === 'giver') {
             if (this.currentCard) {
                 this.currentCard.classList.remove('hidden');
-                if (this.cardWord) this.cardWord.textContent = currentWord;
+                if (this.cardWord) {
+                    this.cardWord.textContent = currentWord;
+                    this.cardWord.classList.remove('blurred-text');
+                }
             }
             if (this.hostControls) this.hostControls.classList.remove('hidden');
             if (this.guessInputContainer) this.guessInputContainer.classList.add('hidden'); // Esconder input
         } else if (role === 'guesser') {
-            if (this.currentCard) this.currentCard.classList.add('hidden');
+            if (this.currentCard) {
+                this.currentCard.classList.remove('hidden'); // Show card container
+                if (this.cardWord) {
+                    this.cardWord.textContent = '???'; // Mask word
+                    this.cardWord.classList.add('blurred-text'); // Optional style class
+                }
+            }
             if (this.hostControls) this.hostControls.classList.add('hidden');
 
             // MOSTRAR INPUT DE CHUTE
-            if (this.guessInputContainer) this.guessInputContainer.classList.remove('hidden');
+            if (this.guessInputContainer) {
+                this.guessInputContainer.classList.remove('hidden');
+                // Renderizar slots se a palavra mudou (ou se é a primeira vez)
+                // Usamos o texto da palavra atual para gerar a estrutura (mas ele está mascarado para o user)
+                if (currentWord) {
+                    this.renderGuessSlots(currentWord);
+                    this.renderVirtualKeyboard(); // Garantir que teclado existe
+                    // Atualizar slots com valor atual do input (caso já tenha algo digitado)
+                    const input = document.getElementById('guess-input');
+                    if (input) this.updateGuessSlots(input.value);
+                }
+            }
 
             // Focar no input se não estiver focado
             const input = document.getElementById('guess-input');
@@ -491,8 +536,14 @@ export class UIController {
                 input.focus();
             }
 
-        } else {
-            if (this.currentCard) this.currentCard.classList.add('hidden');
+        } else { // Spectator
+            if (this.currentCard) {
+                this.currentCard.classList.remove('hidden'); // Spectators see the card
+                if (this.cardWord) {
+                    this.cardWord.textContent = currentWord; // Spectators see the word
+                    this.cardWord.classList.remove('blurred-text');
+                }
+            }
             if (this.hostControls) this.hostControls.classList.add('hidden');
             if (this.guessInputContainer) this.guessInputContainer.classList.add('hidden');
         }
@@ -642,5 +693,137 @@ export class UIController {
             this.hostResultActions.innerHTML = '';
             this.hostResultActions.appendChild(btn);
         }
+    }
+
+    clearGuessInput() {
+        const input = document.getElementById('guess-input');
+        if (input) {
+            input.value = '';
+            this.updateGuessSlots(''); // Clear slots visually
+        }
+    }
+
+    renderGuessSlots(word) {
+        const container = document.getElementById('guess-slots');
+        if (!container) return;
+
+        container.innerHTML = '';
+        const chars = word.split('');
+
+        chars.forEach((char, index) => {
+            const slot = document.createElement('div');
+            slot.className = 'letter-slot';
+            slot.dataset.index = index;
+
+            // Se for caractere especial (hífen, espaço)
+            if (/[^A-Za-z0-9]/.test(char)) {
+                slot.textContent = char;
+                slot.classList.add('spacer');
+            } else {
+                // Letra jogável (vazio inicialmente, mas com borda visível)
+                slot.textContent = '';
+            }
+            container.appendChild(slot);
+        });
+
+        // Selecionar visualmente o primeiro slot
+        const firstSlot = container.querySelector('.letter-slot:not(.spacer)');
+        if (firstSlot) firstSlot.classList.add('active-slot');
+    }
+
+    updateGuessSlots(text) {
+        const container = document.getElementById('guess-slots');
+        if (!container) return;
+
+        // Normalização limpa do input (apenas letras/números)
+        const cleanText = text.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+        const slots = container.querySelectorAll('.letter-slot:not(.spacer)');
+
+        // Limpar todos primeiro
+        slots.forEach(slot => {
+            slot.textContent = '';
+            slot.classList.remove('filled', 'active-slot');
+        });
+
+        // Preencher com o texto digitado
+        for (let i = 0; i < Math.min(cleanText.length, slots.length); i++) {
+            slots[i].textContent = cleanText[i];
+            slots[i].classList.add('filled');
+        }
+
+        // Highlight no próximo slot vazio (cursor visual)
+        if (cleanText.length < slots.length) {
+            slots[cleanText.length].classList.add('active-slot');
+        }
+    }
+
+    renderVirtualKeyboard() {
+        const container = document.getElementById('virtual-keyboard');
+        if (!container || container.childElementCount > 0) return; // evitar re-render desnecessário
+
+        const rows = [
+            'QWERTYUIOP',
+            'ASDFGHJKL',
+            'ZXCVBNM'
+        ];
+
+        rows.forEach((rowChars, rowIndex) => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'keyboard-row';
+
+            // Adicionar botão de Backspace na última linha (antes do Z)
+            if (rowIndex === 2) {
+                const enBtn = document.createElement('button');
+                enBtn.className = 'key-btn key-wide key-enter';
+                enBtn.textContent = 'ENTER';
+                enBtn.onclick = () => this.handleVirtualKey('ENTER');
+                rowDiv.appendChild(enBtn);
+            }
+
+            rowChars.split('').forEach(char => {
+                const btn = document.createElement('button');
+                btn.className = 'key-btn';
+                btn.textContent = char;
+                // Previne foco no botão para manter foco no input invisível (opcional, mas bom pra UX desktop)
+                btn.onmousedown = (e) => e.preventDefault();
+                btn.onclick = () => this.handleVirtualKey(char);
+                rowDiv.appendChild(btn);
+            });
+
+            // Backspace no final da última linha
+            if (rowIndex === 2) {
+                const bsBtn = document.createElement('button');
+                bsBtn.className = 'key-btn key-wide key-backspace';
+                bsBtn.textContent = '⌫';
+                bsBtn.onclick = () => this.handleVirtualKey('BACKSPACE');
+                rowDiv.appendChild(bsBtn);
+            }
+
+            container.appendChild(rowDiv);
+        });
+    }
+
+    handleVirtualKey(key) {
+        const input = document.getElementById('guess-input');
+        if (!input) return;
+
+        let val = input.value;
+
+        if (key === 'BACKSPACE') {
+            val = val.slice(0, -1);
+        } else if (key === 'ENTER') {
+            if (window.game) window.game.checkGuess(val);
+            return; // checkGuess fará o update
+        } else {
+            // Limitar tamanho? Opcional. Deixa livre.
+            val += key;
+        }
+
+        input.value = val;
+        this.updateGuessSlots(val);
+        // Opcional: Auto-check a cada letra? Sim, já fazemos isso no input event
+        if (window.game) window.game.checkGuess(val);
+
+        input.focus(); // Manter foco para continuar digitando se quiser
     }
 }

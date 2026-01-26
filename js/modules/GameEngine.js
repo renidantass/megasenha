@@ -260,12 +260,18 @@ export class GameEngine {
 
         const target = words[currentWordIndex];
 
-        // Normalize: Upper, NFD (accents), remove diacritics
-        const normalize = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+        // Normalize: Remove accents, keep ONLY alphanumeric (A-Z, 0-9)
+        // This removes separators like hyphens, spaces, etc., allowing for continuous typing
+        const normalize = (str) => {
+            return str.normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^A-Za-z0-9]/g, "")
+                .toUpperCase();
+        };
 
         if (normalize(input) === normalize(target)) {
             this.actionCorrect();
-            this.ui.clearGuessInput(); // Limpar input na UI
+            this.ui.clearGuessInput();
         }
     }
 
