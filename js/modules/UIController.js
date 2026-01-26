@@ -450,6 +450,12 @@ export class UIController {
         this.wordCard.classList.remove('giver-mode', 'guesser-mode');
         this.roleDisplay.classList.remove('giver', 'guesser', 'spectator');
 
+        // Determinar o time do usuário
+        const activeTeams = state.activeTeams || ['red', 'blue'];
+        const teams = state.teams || { red: [], blue: [], green: [], purple: [] };
+        const userTeam = activeTeams.find(team => teams[team]?.includes(currentUserId));
+        const guesserTeam = activeTeams.find(team => teams[team]?.includes(state.activePair.guesser));
+
         if (isGiver) {
             // Mostrar a palavra para quem dá dicas
             this.elWord.textContent = state.words[state.currentWordIndex] || '...';
@@ -469,9 +475,9 @@ export class UIController {
             this.hostControls.classList.add('hidden');
             this.spectatorMsg.classList.add('hidden');
         } else {
-            // Espectador
-            this.elWord.textContent = "???";
-            this.elWord.style.color = "#64748b";
+            // Espectador - pode ver a palavra
+            this.elWord.textContent = state.words[state.currentWordIndex] || '...';
+            this.elWord.style.color = "#fbbf24";
             this.roleDisplay.textContent = state.reserve === currentUserId ? "👀 Você é a reserva" : "👀 Você está assistindo";
             this.roleDisplay.classList.add('spectator');
             this.hostControls.classList.add('hidden');
