@@ -43,7 +43,9 @@ export class UIController {
         this.hostIntroControls = document.getElementById('host-intro-controls');
         this.btnSwapGame = document.getElementById('btn-swap-game');
         this.btnPauseGame = document.getElementById('btn-pause-game');
+        this.btnPauseGame = document.getElementById('btn-pause-game');
         this.btnResumeOverlay = document.getElementById('btn-resume-overlay');
+        this.btnSkipGame = document.getElementById('btn-skip-round');
 
         // Chat
         this.chatBtn = document.getElementById('btn-toggle-chat');
@@ -432,12 +434,16 @@ export class UIController {
         if (isHost) {
             this.btnSwapGame.classList.remove('hidden');
             this.btnPauseGame.classList.remove('hidden');
+            this.btnSkipGame = document.getElementById('btn-skip-round');
+            if (this.btnSkipGame) this.btnSkipGame.classList.remove('hidden');
             this.btnPauseGame.textContent = state.isPaused ? "▶" : "⏸";
             this.btnResumeOverlay.classList.remove('hidden');
         } else {
             this.btnSwapGame.classList.add('hidden');
             this.btnPauseGame.classList.add('hidden');
             this.btnResumeOverlay.classList.add('hidden');
+            const skipBtn = document.getElementById('btn-skip-round');
+            if (skipBtn) skipBtn.classList.add('hidden');
         }
 
         const isGiver = state.activePair.giver === currentUserId;

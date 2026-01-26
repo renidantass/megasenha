@@ -97,6 +97,8 @@ export class GameEngine {
         document.getElementById('btn-swap-game').onclick = () => this.hostSwapRoles();
         document.getElementById('btn-pause-game').onclick = () => this.hostTogglePause();
         document.getElementById('btn-resume-overlay').onclick = () => this.hostTogglePause();
+        const skipBtn = document.getElementById('btn-skip-round');
+        if (skipBtn) skipBtn.onclick = () => this.hostSkipRound();
 
         // CHAT EVENTS
         document.getElementById('btn-toggle-chat').onclick = () => this.ui.toggleChat();
@@ -476,6 +478,18 @@ export class GameEngine {
                 });
             } catch (e) { console.error("Pause Error", e); }
         }
+    }
+
+    async hostSkipRound() {
+        if (!this.net.isHost) return;
+        if (!confirm("Tem certeza que deseja forçar o fim desta rodada?")) return;
+
+        try {
+            await this.net.updateState({
+                status: 'result',
+                lastEvent: 'round_end_' + Date.now()
+            });
+        } catch (e) { console.error("Skip Round Error", e); }
     }
 
     async actionCorrect() {
