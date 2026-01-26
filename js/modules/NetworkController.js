@@ -1,9 +1,9 @@
-import { 
-    getAuth, signInAnonymously, signInWithCustomToken, signOut 
+import {
+    getAuth, signInAnonymously, signInWithCustomToken, signOut
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { 
-    getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, deleteField, 
-    arrayRemove, arrayUnion, deleteDoc, getDocs, query, where, or, and, collection 
+import {
+    getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, deleteField,
+    arrayRemove, arrayUnion, deleteDoc, getDocs, query, where, or, and, collection, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 export class NetworkController {
@@ -37,9 +37,9 @@ export class NetworkController {
             // ⚠️ OTIMIZADO: Usar query com where para reduzir documentos lidos
             const sessionsRef = collection(this.db, 'mega_senha_sessions');
             const q = query(sessionsRef, where("timestamp", "<", twoHoursAgo));
-            
+
             const snapshot = await getDocs(q);
-            
+
             // Deletar apenas salas antigas
             snapshot.forEach(async (roomDoc) => {
                 try {
@@ -59,7 +59,7 @@ export class NetworkController {
             this.user = this.auth.currentUser;
             return;
         }
-        
+
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
             try {
                 const cred = await signInWithCustomToken(this.auth, __initial_auth_token);
@@ -67,12 +67,12 @@ export class NetworkController {
                 return;
             } catch (e) { console.warn("Fallback anonymous", e); }
         }
-        
+
         try {
             const cred = await signInAnonymously(this.auth);
             this.user = cred.user;
-        } catch (e) { 
-            console.error("Falha Auth:", e); 
+        } catch (e) {
+            console.error("Falha Auth:", e);
             alert("Erro de autenticação. Verifique o console.");
         }
     }
@@ -86,18 +86,18 @@ export class NetworkController {
     async createRoom(nickname) {
         await this.init();
         if (!this.user) throw new Error("Não autenticado");
-        
+
         const code = Math.random().toString(36).substring(2, 6).toUpperCase();
         this.roomId = code;
         this.isHost = true;
 
         const roomRef = doc(this.db, 'mega_senha_sessions', code);
-        
+
         const initialState = {
             hostId: this.user.uid,
-            status: 'waiting', 
+            status: 'waiting',
             scores: { red: 0, blue: 0, green: 0, purple: 0 },
-            currentTurn: 'red', 
+            currentTurn: 'red',
             teams: { red: [], blue: [], green: [], purple: [] },
             activeTeams: ['red', 'blue'], // Apenas times ativos
             reserve: null,
@@ -107,18 +107,18 @@ export class NetworkController {
             words: [],
             currentWordIndex: 0,
             roundStartTime: null,
-            roundNumber: 0, 
+            roundNumber: 0,
             isPaused: false,
             timeRemainingWhenPaused: 0,
-            
+
             teamHistory: {}, // Histórico de papéis por time
-            
+
             lastEvent: 'created',
             timestamp: Date.now(),
-            
+
             usedWords: [],
-            
-            messages: [], 
+
+            messages: [],
             players: {
                 [this.user.uid]: { nickname: nickname, role: 'host', team: null }
             }
@@ -191,7 +191,7 @@ export class NetworkController {
                     // Se está em status de jogo e fica com menos de 2 jogadores, volta para waiting
                     const totalPlayers = Object.keys(updatedPlayers).length;
                     let newStatus = data.status;
-                    
+
                     if ((data.status === 'playing' || data.status === 'intro') && totalPlayers < 2) {
                         newStatus = 'waiting';
                         console.log(`Sala retornou para waiting pois ficou com ${totalPlayers} jogador(es)`);
@@ -212,8 +212,8 @@ export class NetworkController {
                     }
                 }
             }
-        } catch (e) { 
-            console.error("Erro ao sair da sala:", e); 
+        } catch (e) {
+            console.error("Erro ao sair da sala:", e);
         } finally {
             this.reset();
         }
@@ -243,7 +243,7 @@ export class NetworkController {
             } else if (targetTeam === 'blue') {
                 await updateDoc(roomRef, { "teams.blue": arrayUnion(targetUid) });
             }
-        } catch(e) { console.error("Erro ao trocar time", e); }
+        } catch (e) { console.error("Erro ao trocar time", e); }
     }
 
     async kickPlayer(targetUid) {
@@ -255,13 +255,13 @@ export class NetworkController {
                 "teams.red": arrayRemove(targetUid),
                 "teams.blue": arrayRemove(targetUid)
             });
-        } catch(e) { console.error("Erro ao kickar", e); }
+        } catch (e) { console.error("Erro ao kickar", e); }
     }
 
     subscribeToRoom(code) {
         if (this.unsubscribe) this.unsubscribe();
         const roomRef = doc(this.db, 'mega_senha_sessions', code);
-        
+
         // ⚠️ OTIMIZADO: Usar onSnapshotListener com options para reduzir updates
         this.unsubscribe = onSnapshot(
             roomRef,
@@ -279,31 +279,31 @@ export class NetworkController {
 
     async updateState(newData) {
         if (!this.roomId) return;
-        
+
         // Fila de atualizações para debouncing
         this.updateQueue.push(newData);
-        
+
         if (this.isUpdating) return;
-        
+
         const now = Date.now();
         const timeSinceLastUpdate = now - this.lastUpdateTime;
         const waitTime = Math.max(0, this.updateDebounceMs - timeSinceLastUpdate);
-        
+
         this.isUpdating = true;
-        
+
         setTimeout(async () => {
             if (this.updateQueue.length === 0) {
                 this.isUpdating = false;
                 return;
             }
-            
+
             // Mesclar todas as atualizações da fila
             const mergedData = this.updateQueue.reduce((acc, update) => {
                 return { ...acc, ...update };
             }, {});
-            
+
             this.updateQueue = [];
-            
+
             const roomRef = doc(this.db, 'mega_senha_sessions', this.roomId);
             try {
                 await updateDoc(roomRef, { ...mergedData, timestamp: Date.now() });
@@ -316,30 +316,34 @@ export class NetworkController {
             }
         }, waitTime);
     }
-    
+
     async updateMessages(messages) {
         if (!this.roomId) return;
         const roomRef = doc(this.db, 'mega_senha_sessions', this.roomId);
         try {
             await updateDoc(roomRef, { messages: messages });
-        } catch(e) { console.error("Chat Reaction Error:", e); }
+        } catch (e) { console.error("Chat Reaction Error:", e); }
     }
 
     async sendChatMessage(text, nickname) {
         if (!this.roomId) return;
         const roomRef = doc(this.db, 'mega_senha_sessions', this.roomId);
         const msg = {
-            id: Date.now() + Math.random().toString(), 
+            id: Date.now() + Math.random().toString(),
             sender: nickname,
             text: text,
             uid: this.user.uid,
             timestamp: Date.now(),
-            reactions: {} 
+            reactions: {}
         };
         try {
             await updateDoc(roomRef, {
                 messages: arrayUnion(msg)
             });
-        } catch(e) { console.error("Chat Error:", e); }
+        } catch (e) { console.error("Chat Error:", e); }
+    }
+
+    getServerTimestamp() {
+        return serverTimestamp();
     }
 }

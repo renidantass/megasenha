@@ -376,7 +376,7 @@ export class GameEngine {
             setTimeout(() => {
                 this.net.updateState({
                     status: 'playing',
-                    roundStartTime: Date.now(),
+                    roundStartTime: this.net.getServerTimestamp(),
                     lastEvent: 'start_' + Date.now()
                 });
             }, 3000);
@@ -630,7 +630,15 @@ export class GameEngine {
                     return;
                 }
 
-                const elapsed = (Date.now() - data.roundStartTime) / 1000;
+                // ⚠️ OTIMIZADO: parse do timestamp do servidor
+                let startTime = data.roundStartTime;
+                if (startTime && typeof startTime.toMillis === 'function') {
+                    startTime = startTime.toMillis();
+                } else if (!startTime) {
+                    startTime = Date.now();
+                }
+
+                const elapsed = (Date.now() - startTime) / 1000;
                 const rem = Math.ceil(GameData.ROUND_TIME - elapsed);
                 this.ui.updateTimer(rem);
 
