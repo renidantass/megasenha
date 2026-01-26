@@ -39,7 +39,9 @@ export class UIController {
                 if (window.game) window.game.checkGuess(e.target.value);
             });
         }
+        this.currentCard = document.getElementById('game-word-container'); // ALIAS para wordCard
         this.wordCard = document.getElementById('game-word-container');
+        this.cardWord = document.getElementById('word-display'); // ALIAS para elWord
         this.elWord = document.getElementById('word-display');
         this.roleDisplay = document.getElementById('role-display');
         this.elTimer = document.getElementById('timer-display');
@@ -470,13 +472,15 @@ export class UIController {
         const currentWord = state.words[state.currentWordIndex];
 
         if (role === 'giver') {
-            this.currentCard.classList.remove('hidden');
-            this.cardWord.textContent = currentWord;
-            this.hostControls.classList.remove('hidden'); // Was this.gameControls
+            if (this.currentCard) {
+                this.currentCard.classList.remove('hidden');
+                if (this.cardWord) this.cardWord.textContent = currentWord;
+            }
+            if (this.hostControls) this.hostControls.classList.remove('hidden');
             this.guessInputContainer.classList.add('hidden'); // Esconder input
         } else if (role === 'guesser') {
-            this.currentCard.classList.add('hidden');
-            this.hostControls.classList.add('hidden');
+            if (this.currentCard) this.currentCard.classList.add('hidden');
+            if (this.hostControls) this.hostControls.classList.add('hidden');
 
             // MOSTRAR INPUT DE CHUTE
             this.guessInputContainer.classList.remove('hidden');
@@ -488,9 +492,9 @@ export class UIController {
             }
 
         } else {
-            this.currentCard.classList.add('hidden');
-            this.hostControls.classList.add('hidden');
-            this.guessInputContainer.classList.add('hidden');
+            if (this.currentCard) this.currentCard.classList.add('hidden');
+            if (this.hostControls) this.hostControls.classList.add('hidden');
+            if (this.guessInputContainer) this.guessInputContainer.classList.add('hidden');
         }
 
         console.log("Atualizar Interface do Jogo:", {
