@@ -82,6 +82,7 @@ export const GameData = {
     ],
     WORDS_PER_ROUND: 5,
     ROUND_TIME: 90,
+    WIN_SCORE: 20,
     MAX_TEAMS: 4,
     TEAM_COLORS: ['red', 'blue', 'green', 'purple']
 };

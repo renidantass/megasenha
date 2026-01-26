@@ -527,4 +527,71 @@ export class UIController {
         this.elTimer.childNodes[0].nodeValue = Math.max(0, seconds) + ' ';
         if (seconds <= 10) this.elTimer.classList.add('danger'); else this.elTimer.classList.remove('danger');
     }
+
+    updateWinScreen(state, isHost) {
+        this.hostResultActions.classList.add('hidden');
+        document.getElementById('auto-transition-msg').classList.add('hidden');
+
+        const title = document.getElementById('result-title');
+        const msg = document.getElementById('result-msg');
+        const icon = document.getElementById('result-icon');
+
+        const isRed = state.winner === 'red';
+
+        icon.textContent = "🏆";
+        title.textContent = isRed ? "VITÓRIA DO VERMELHO!" : "VITÓRIA DO AZUL!";
+        title.style.color = isRed ? "var(--team-red)" : "var(--team-blue)";
+
+        msg.innerHTML = `
+            <div style="font-size: 1.5rem; margin-top: 10px;">
+                PLACAR FINAL<br>
+                <span style="color:var(--team-red)">${state.scores.red}</span> x <span style="color:var(--team-blue)">${state.scores.blue}</span>
+            </div>
+            <div style="margin-top: 20px; color: #fbbf24; font-weight: bold;">
+                Nova partida em 10s...
+            </div>
+        `;
+
+        // Trigger Confetti
+        if (window.confetti) {
+            const end = Date.now() + 3000;
+            const colors = isRed ? ['#ef4444', '#ffffff'] : ['#3b82f6', '#ffffff'];
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: colors
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: colors
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        if (isHost) {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-join';
+            btn.style.marginTop = '20px';
+            btn.textContent = '🔄 Reiniciar Agora';
+            btn.onclick = () => {
+                this.loading.classList.remove('hidden');
+                window.location.reload(); // Simple manual reset fallback, or use game.resetGame via event
+            };
+            // Better: Attach event listener in GameEngine
+            this.hostResultActions.classList.remove('hidden');
+            this.hostResultActions.innerHTML = '';
+            this.hostResultActions.appendChild(btn);
+        }
+    }
 }

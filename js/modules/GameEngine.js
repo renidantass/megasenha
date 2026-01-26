@@ -509,6 +509,16 @@ export class GameEngine {
         scores[currentTeam] = newScore;
         updateData.scores = scores;
 
+        // VERIFICAR VITÓRIA
+        if (newScore >= GameData.WIN_SCORE) {
+            updateData.status = 'win';
+            updateData.winner = currentTeam;
+            updateData.lastEvent = 'win_' + Date.now();
+            updateData.roundStartTime = Date.now(); // Usado para countdown do auto-reset
+            this.net.updateState(updateData);
+            return;
+        }
+
         if (nextWordIndex >= (this.serverState.words || []).length) {
             updateData.status = 'result';
             updateData.lastEvent = 'round_end_' + Date.now();
@@ -671,6 +681,31 @@ export class GameEngine {
             tick();
             this.localTimer = setInterval(tick, 200);
             return;
+        }
+
+        if (data.status === 'win') {
+            this.ui.showScreen('result'); // Reusar result screen ou criar nova
+            this.ui.updateWinScreen(data, this.net.isHost);
+
+            // Auto-reset check (Host Only)
+            if (this.net.isHost) {
+                // ⚠️ OTIMIZADO: parse do timestamp do servidor
+                let startTime = data.roundStartTime;
+                if (startTime && typeof startTime.toMillis === 'function') {
+                    startTime = startTime.toMillis();
+                } else if (!startTime) {
+                    startTime = Date.now();
+                }
+
+                const elapsed = (Date.now() - startTime) / 1000;
+                if (elapsed >= 10) {
+                    this.resetGame();
+                } else {
+                    if (this.resetTimer) clearTimeout(this.resetTimer);
+                    const remainingMs = (10 - elapsed) * 1000;
+                    this.resetTimer = setTimeout(() => this.resetGame(), remainingMs);
+                }
+            }
         }
 
         if (data.status === 'result') {
