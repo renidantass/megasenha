@@ -306,6 +306,7 @@ export class UIController {
 
             let roleLabel = '';
             let isActive = false;
+            let actions = '';
 
             if (uid === giverId) {
                 roleLabel = 'Dica';
@@ -328,7 +329,6 @@ export class UIController {
             else if (roleLabel === 'Chute') badgeClass += ' guesser';
             else if (roleLabel === 'Reserva') badgeClass += ' reserve';
 
-            let actions = '';
             if (isHost && uid !== currentUserId) {
                 actions += `<button class="action-icon-btn btn-make-host" data-uid="${uid}" title="Tornar Host">👑</button>`;
                 actions += `<button class="action-icon-btn btn-kick" data-uid="${uid}" title="Expulsar">👢</button>`;
