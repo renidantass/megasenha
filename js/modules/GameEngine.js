@@ -567,7 +567,14 @@ export class GameEngine {
     handleState(data) {
         if (!data) return;
         this.serverState = data;
+        this.serverState = data;
         const uid = this.net.user?.uid;
+
+        // Limpar timer de reset se não estivermos na tela de vitória
+        if (data.status !== 'win' && this.resetTimer) {
+            clearTimeout(this.resetTimer);
+            this.resetTimer = null;
+        }
 
         // Se o jogador foi removido da sala, voltar ao menu
         if (uid && !data.players[uid] && this.net.roomId) {
@@ -701,9 +708,14 @@ export class GameEngine {
                 if (elapsed >= 10) {
                     this.resetGame();
                 } else {
-                    if (this.resetTimer) clearTimeout(this.resetTimer);
-                    const remainingMs = (10 - elapsed) * 1000;
-                    this.resetTimer = setTimeout(() => this.resetGame(), remainingMs);
+                    // Só agenda o timer se ainda não estiver agendado
+                    if (!this.resetTimer) {
+                        const remainingMs = (10 - elapsed) * 1000;
+                        this.resetTimer = setTimeout(() => {
+                            this.resetTimer = null;
+                            this.resetGame();
+                        }, remainingMs);
+                    }
                 }
             }
         }
