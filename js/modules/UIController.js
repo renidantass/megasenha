@@ -147,9 +147,9 @@ export class UIController {
         show ? this.rulesModal.classList.add('active') : this.rulesModal.classList.remove('active');
     }
 
-    toggleJoinModal(show) {
+    toggleJoinModal(show, autoFocus = true) {
         show ? this.joinModal.classList.add('active') : this.joinModal.classList.remove('active');
-        if (show) {
+        if (show && autoFocus) {
             const input = document.getElementById('input-join-room-code');
             if (input) setTimeout(() => input.focus(), 50);
         }

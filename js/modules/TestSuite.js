@@ -254,22 +254,34 @@ export class TestSuite {
         this.mockState.currentWordIndex = 0;
         this.updateGameLocal();
 
-        // Mock Alert to catch errors
-        let lastAlert = "";
-        const originalAlert = window.alert;
-        window.alert = (msg) => { lastAlert = msg; };
+        // Mock showToast to catch errors
+        let lastToastMsg = "";
+        const originalShowToast = this.game.ui.showToast;
+        // Mock implementation
+        this.game.ui.showToast = (type, title, msg) => {
+            lastToastMsg = (text || title || "") + " " + (msg || "");
+            // Support both signature styles if changed: (icon, title, text) or (type, title, message)
+            // In GameEngine it calls: this.ui.showToast('warning', 'Dica Curta', 'A dica deve ter pelo menos 2 letras!')
+            // In UIController it was defined as showToast(icon, title, text) [SweetAlert implementation]
+        };
+        // However, we just need to capture the text arguments.
+        this.game.ui.showToast = (arg1, arg2, arg3) => {
+            lastToastMsg = `${arg1} ${arg2} ${arg3}`;
+        };
+
 
         // Test 1: Short Hint
         this.log("Tentando enviar dica curta 'A'...");
         await this.game.actionSendHint("A");
-        this.assert(lastAlert.includes("pelo menos 2"), "Deve bloquear dica de 1 letra");
+        this.assert(lastToastMsg.includes("pelo menos 2"), "Deve bloquear dica de 1 letra");
         this.assert(this.mockState.currentHint == null, "Hint não deve ser persistida");
 
         // Test 2: Forbidden Word
         const targetWord = this.mockState.words[0];
+        lastToastMsg = "";
         this.log(`Tentando enviar dica proibida (Palavra Alvo: ${targetWord})...`);
         await this.game.actionSendHint(targetWord);
-        this.assert(lastAlert.includes("não pode conter"), "Deve bloquear dica igual a palavra alvo");
+        this.assert(lastToastMsg.includes("não pode conter"), "Deve bloquear dica igual a palavra alvo");
         this.assert(this.mockState.currentHint == null, "Hint não deve ser persistida");
 
         // Test 3: Valid Hint
@@ -277,8 +289,8 @@ export class TestSuite {
         await this.game.actionSendHint("TESTANDO");
         this.assert(this.mockState.currentHint === "TESTANDO", "Dica válida deve ser salva no state");
 
-        // Restore Alert
-        window.alert = originalAlert;
+        // Restore
+        this.game.ui.showToast = originalShowToast;
     }
     async testGameplayFlow() {
         this.log(">> Testando Fluxo de Gameplay (Score/Pass)");

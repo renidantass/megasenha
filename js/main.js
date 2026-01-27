@@ -20,8 +20,23 @@ if (!firebaseConfig.projectId) {
 const app = initializeApp(firebaseConfig);
 window.game = new GameEngine(app);
 
-// Check for Debug Mode
+// Check for Join Code via URL
 const params = new URLSearchParams(window.location.search);
+const joinCode = params.get('code') || params.get('room');
+
+if (joinCode) {
+    const input = document.getElementById('input-join-room-code');
+    if (input) {
+        input.value = joinCode.toUpperCase();
+        // Wait slightly for GameEngine/UI to be ready if needed, though usually sync constructor is enough
+        // passing false to 2nd argument prevents auto-focus (mobile keyboard)
+        if (window.game && window.game.ui) {
+            window.game.ui.toggleJoinModal(true, false);
+        }
+    }
+}
+
+// Check for Debug Mode
 if (params.get('debug') === 'true') {
     import("./modules/TestSuite.js").then(({ TestSuite }) => {
         const suite = new TestSuite(window.game);
