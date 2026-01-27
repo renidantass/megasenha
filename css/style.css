@@ -2793,3 +2793,79 @@ body {
 #menu-screen>.menu-card {
     margin-top: 10px;
 }
+
+/* === HINT SYSTEM === */
+.hint-container {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 10px 20px;
+    margin: 10px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 90%;
+    max-width: 400px;
+}
+
+.hint-label {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.hint-text {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #facc15; /* Amarelo */
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.giver-controls-row {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.giver-hint-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    max-width: 400px;
+    margin-top: 10px;
+}
+
+.input-hint {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+    color: white;
+    font-size: 1rem;
+    outline: none;
+}
+
+.input-hint:focus {
+    border-color: #3b82f6;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.btn-hint-send {
+    background: linear-gradient(to right, #8b5cf6, #7c3aed);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.btn-hint-send:active {
+    transform: scale(0.95);
+}

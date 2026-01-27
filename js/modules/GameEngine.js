@@ -60,6 +60,25 @@ export class GameEngine {
         document.getElementById('btn-back-from-rooms').onclick = () => this.ui.showScreen('menu');
         document.getElementById('btn-refresh-rooms').onclick = () => this.showRoomList();
 
+        // HINT CONTROLS
+        const btnSendHint = document.getElementById('btn-send-hint');
+        if (btnSendHint) {
+            btnSendHint.onclick = () => {
+                const input = document.getElementById('input-giver-hint');
+                this.actionSendHint(input.value);
+                input.value = ''; // Opcional: limpar logo, ou esperar sucesso
+            };
+        }
+        const inputHint = document.getElementById('input-giver-hint');
+        if (inputHint) {
+            inputHint.onkeypress = (e) => {
+                if (e.key === 'Enter') {
+                    this.actionSendHint(inputHint.value);
+                    inputHint.value = '';
+                }
+            };
+        }
+
         document.getElementById('btn-sound').onclick = (e) => {
             const en = this.audio.toggle();
             e.target.textContent = en ? '🔊 Sons Ligados' : '🔇 Sons Desligados';
@@ -374,10 +393,13 @@ export class GameEngine {
             // Se tivermos apenas 2, eles trocam de papel naturalmente.
             // Se tiver > 2, o this.teamManager.rotateTeamInternal já fazia isso.
             // Vamos aplicar uma rotação simples: Quem jogou vai pro fim.
-            if (currentTeamList.length > 2) {
-                // Remover giver e guesser e por no fim?
-                // Ou confiar na ordem atual?
-                // Vamos deixar a ordem natural se alterada.
+            // ROTATION FIX: Ensure rotation even if just 2 players
+            if (currentTeamList.length >= 2) {
+                // Move current Giver to the end of the list.
+                // In a list of [A, B]:
+                // Round 1: Giver=A, Guesser=B. List=[A, B]
+                // End R1: Move A to end -> [B, A]
+                // Round 2: Giver=B, Guesser=A. Correct behavior.
                 // Mas se NINGUEM saiu/entrou (ex: time de 2), precisamos inverter?
                 // formDuo já inverteu os papeis retornados (giver/guesser), mas a lista state.teams precisa refletir?
                 // Não estritamente, mas ajuda a manter "fila".
@@ -429,6 +451,7 @@ export class GameEngine {
                 roundNumber: roundNum,
                 isPaused: false,
                 teamHistory: teamHistory,
+                currentHint: null, // Reset hint for new round
                 lastEvent: 'intro_' + Date.now()
             });
 
@@ -588,7 +611,9 @@ export class GameEngine {
 
         const updateData = {
             correctCount: correctCount,
-            currentWordIndex: nextWordIndex
+            correctCount: correctCount,
+            currentWordIndex: nextWordIndex,
+            currentHint: null // Clear hint on correct
         };
 
         const scores = { ...this.serverState.scores };
@@ -629,6 +654,7 @@ export class GameEngine {
 
         const updateData = {
             words: words,
+            currentHint: null, // Clear hint on pass
             lastEvent: 'pass_' + Date.now()
         };
 
@@ -641,6 +667,30 @@ export class GameEngine {
             // ⚠️ OTIMIZADO: updateState já faz debounce interno
             this.net.updateState(updateData);
         }
+    }
+
+    async actionSendHint(hintText) {
+        if (!this.serverState) return;
+        if (!hintText || typeof hintText !== 'string') return;
+
+        // Validation Rule 1: No single letters
+        const cleanHint = hintText.trim();
+        if (cleanHint.length < 2) {
+            alert("A dica deve ter pelo menos 2 letras!");
+            return;
+        }
+
+        // Validation Rule 2: Cannot contain the target word (basic check)
+        const currentWord = this.serverState.words[this.serverState.currentWordIndex];
+        if (currentWord && cleanHint.toUpperCase().includes(currentWord.toUpperCase())) {
+            alert("A dica não pode conter a palavra secreta!");
+            return;
+        }
+
+        await this.net.updateState({
+            currentHint: cleanHint,
+            lastEvent: 'hint_' + Date.now()
+        });
     }
 
 
@@ -748,7 +798,7 @@ export class GameEngine {
 
         if (data.lastEvent !== this.lastProcessedEvent) {
             const evt = data.lastEvent.split('_')[0];
-            if (['intro', 'start', 'correct', 'pass', 'win', 'gameover'].includes(evt)) this.audio.play(evt);
+            if (['intro', 'start', 'correct', 'pass', 'win', 'gameover', 'hint'].includes(evt)) this.audio.play(evt);
             this.lastProcessedEvent = data.lastEvent;
         }
 

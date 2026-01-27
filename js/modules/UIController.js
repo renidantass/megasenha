@@ -82,7 +82,10 @@ export class UIController {
         this.progressContainer = document.getElementById('progress-container');
 
         // Controls
-        this.gameControls = document.getElementById('game-controls'); // <--- MISSING INITIALIZATION
+        this.gameControls = document.getElementById('game-controls');
+        this.hintContainer = document.getElementById('hint-display-container');
+        this.hintText = document.getElementById('hint-text');
+        this.hintInput = document.getElementById('input-giver-hint');
         this.hostControls = document.getElementById('host-controls');
         this.spectatorMsg = document.getElementById('spectator-msg');
         this.hostResultActions = document.getElementById('host-result-actions');
@@ -504,6 +507,15 @@ export class UIController {
         else if (isGuesser) role = 'guesser';
 
         const currentWord = state.words[state.currentWordIndex];
+
+        // HINT DISPLAY LOGIC
+        if (state.currentHint) {
+            this.hintContainer.classList.remove('hidden');
+            this.hintText.textContent = state.currentHint;
+        } else {
+            this.hintContainer.classList.add('hidden');
+            this.hintText.textContent = '...';
+        }
 
         if (role === 'giver') {
             if (this.currentCard) {

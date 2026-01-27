@@ -263,16 +263,29 @@
              <div style="font-size: 0.8rem; opacity: 0.7; margin-top: -10px;">(Use o teclado acima ou digite)</div>
         </div>
 
+        <!-- HINT DISPLAY (For Guesser/Spectator) -->
+        <div id="hint-display-container" class="hint-container hidden">
+            <span class="hint-label">DICA:</span>
+            <span id="hint-text" class="hint-text">...</span>
+        </div>
+
         <!-- CONTROLES ATIVOS DO DADOR DE DICAS -->
         <div id="host-controls" class="game-controls hidden">
-            <button id="btn-pass" class="btn btn-game btn-pass">
-                <span>⏩</span>
-                <span>PULAR</span>
-            </button>
-            <button id="btn-correct" class="btn btn-game btn-correct">
-                <span>✅</span>
-                <span>ACERTOU</span>
-            </button>
+            <div class="giver-controls-row">
+                 <button id="btn-pass" class="btn btn-game btn-pass">
+                    <span>⏩</span>
+                    <span>PULAR</span>
+                </button>
+                <button id="btn-correct" class="btn btn-game btn-correct">
+                    <span>✅</span>
+                    <span>ACERTOU</span>
+                </button>
+            </div>
+            
+            <div class="giver-hint-row">
+                <input type="text" id="input-giver-hint" class="input-hint" placeholder="Enviar dica..." maxlength="20">
+                <button id="btn-send-hint" class="btn-hint-send">ENVIAR</button>
+            </div>
         </div>
 
         <!-- MENSAGEM DE ESPECTADOR -->
