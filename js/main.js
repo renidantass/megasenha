@@ -19,3 +19,13 @@ if (!firebaseConfig.projectId) {
 
 const app = initializeApp(firebaseConfig);
 window.game = new GameEngine(app);
+
+// Check for Debug Mode
+const params = new URLSearchParams(window.location.search);
+if (params.get('debug') === 'true') {
+    import("./modules/TestSuite.js").then(({ TestSuite }) => {
+        const suite = new TestSuite(window.game);
+        // Pequeno delay para garantir que o GameEngine inicializou
+        setTimeout(() => suite.run(), 1000);
+    }).catch(err => console.error("Falha ao carregar Suite de Testes:", err));
+}
