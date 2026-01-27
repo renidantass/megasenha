@@ -783,8 +783,9 @@ export class UIController {
         const container = document.getElementById('guess-slots');
         if (!container) return;
 
-        // Normalização limpa do input (apenas letras/números)
-        const cleanText = text.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+        // Normalização limpa do input (apenas letras/números), mas PRESERVANDO mapeamento de acentos
+        // Ex: "PRAÇA" -> Normalize "PRACA" -> Regex keep "PRACA"
+        const cleanText = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]/g, '').toUpperCase();
         const slots = container.querySelectorAll('.letter-slot:not(.spacer)');
 
         // Limpar todos primeiro
@@ -852,26 +853,22 @@ export class UIController {
     }
 
     handleVirtualKey(key) {
+        // Find best input target
         const input = document.getElementById('guess-input');
         if (!input) return;
 
-        let val = input.value;
-
-        if (key === 'BACKSPACE') {
-            val = val.slice(0, -1);
-        } else if (key === 'ENTER') {
-            if (window.game) window.game.checkGuess(val);
-            return; // checkGuess fará o update
+        if (key === 'ENTER') {
+            if (window.game) window.game.checkGuess(input.value);
+        } else if (key === '⌫') {
+            input.value = input.value.slice(0, -1);
+            // Manually trigger input event for UI update
+            input.dispatchEvent(new Event('input', { bubbles: true }));
         } else {
-            // Limitar tamanho? Opcional. Deixa livre.
-            val += key;
+            input.value += key;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
-        input.value = val;
-        this.updateGuessSlots(val);
-        // Opcional: Auto-check a cada letra? Sim, já fazemos isso no input event
-        if (window.game) window.game.checkGuess(val);
-
-        input.focus(); // Manter foco para continuar digitando se quiser
+        // Keep focus
+        input.focus();
     }
 }
