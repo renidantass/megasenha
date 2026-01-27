@@ -300,14 +300,22 @@ export class GameEngine {
         roundNum
     ) {
         try {
-            // Validar que os times têm jogadores
+            // Validar que os times têm jogadores REAIS (que estão em serverState.players)
             const validTeams = {};
             const validActiveTeams = [];
+            const existingPlayers = Object.keys(this.serverState?.players || {});
 
             for (const team of activeTeams) {
                 if (teams[team] && teams[team].length > 0) {
-                    validTeams[team] = teams[team];
-                    validActiveTeams.push(team);
+                    // Filter Zombie Players
+                    const cleanTeam = teams[team].filter(uid => existingPlayers.includes(uid));
+
+                    if (cleanTeam.length > 0) {
+                        validTeams[team] = cleanTeam;
+                        validActiveTeams.push(team);
+                    } else {
+                        validTeams[team] = [];
+                    }
                 } else {
                     validTeams[team] = [];
                 }
@@ -325,23 +333,64 @@ export class GameEngine {
                 : validActiveTeams[0];
 
             // Preparar estado para a dupla
+            // Agora formDuo... já calcula a rotação ideal
             const duoInfo = this.teamManager.formDuoAndRotateReserve(
                 {
                     currentTurn: actualTeam,
-                    teams: validTeams,
+                    teams: validTeams, // Passamos os times atuais
                     reserve: reserve,
                     teamHistory: this.serverState?.teamHistory || {}
                 },
                 actualTeam
             );
 
-            console.log(`Rodada ${roundNum}:`, {
-                time: actualTeam,
-                giver: duoInfo.giver,
-                guesser: duoInfo.guesser,
-                reserve: duoInfo.newReserve,
-                activeTeams: validActiveTeams
-            });
+            console.log(`Rodada ${roundNum} [${actualTeam}]:`, duoInfo);
+
+            if (!duoInfo.guesser && !duoInfo.giver) {
+                alert("Erro crítico: Não foi possível formar dupla.");
+                return;
+            }
+
+            // Atualizar listas dos times com base na rotação
+            let updatedTeams = { ...validTeams };
+            let currentTeamList = [...updatedTeams[actualTeam]];
+
+            // Se houve rotação (player entrou do reserve), precisamos refletir isso na lista
+            // A lógica do formDuo assume que "reserve" entra no time.
+            if (reserve && reserve !== duoInfo.newReserve) {
+                // Significa que o reserve antigo entrou.
+                // Adicionamos ele à lista do time se não estiver lá
+                if (!currentTeamList.includes(reserve)) {
+                    currentTeamList.push(reserve);
+                }
+            }
+
+            // Se alguém saiu (rotatedOut), removemos da lista do time
+            if (duoInfo.rotatedOut) {
+                currentTeamList = currentTeamList.filter(uid => uid !== duoInfo.rotatedOut);
+            }
+
+            // Rotacionar internamente (Giver/Guesser vão pro final da fila para dar chance aos outros na próxima se > 2)
+            // Se tivermos apenas 2, eles trocam de papel naturalmente.
+            // Se tiver > 2, o this.teamManager.rotateTeamInternal já fazia isso.
+            // Vamos aplicar uma rotação simples: Quem jogou vai pro fim.
+            if (currentTeamList.length > 2) {
+                // Remover giver e guesser e por no fim?
+                // Ou confiar na ordem atual?
+                // Vamos deixar a ordem natural se alterada.
+                // Mas se NINGUEM saiu/entrou (ex: time de 2), precisamos inverter?
+                // formDuo já inverteu os papeis retornados (giver/guesser), mas a lista state.teams precisa refletir?
+                // Não estritamente, mas ajuda a manter "fila".
+                // Vamos mover o giver atual para o fim da lista para garantir rotatividade futura
+                const gIndex = currentTeamList.indexOf(duoInfo.giver);
+                if (gIndex > -1) {
+                    currentTeamList.splice(gIndex, 1);
+                    currentTeamList.push(duoInfo.giver);
+                }
+            }
+
+            updatedTeams[actualTeam] = currentTeamList;
+
 
             // Atualizar histórico de papéis
             let teamHistory = this.serverState?.teamHistory || {};
@@ -364,20 +413,6 @@ export class GameEngine {
                 .sort(() => 0.5 - Math.random())
                 .slice(0, GameData.WORDS_PER_ROUND);
             const newUsedWords = [...usedWords, ...shuffledWords];
-
-            // Integrar reserve de volta ao time se rotacionou
-            let updatedTeams = validTeams;
-            if (duoInfo.rotatedOut) {
-                updatedTeams = this.teamManager.integrateReserveNextRound(
-                    validTeams,
-                    reserve,
-                    duoInfo.rotatedOut
-                );
-            } else {
-                // Se não houve troca com reserva global, rotacionar internamente o time
-                const rotatedTeam = this.teamManager.rotateTeamInternal(validTeams[actualTeam]);
-                updatedTeams[actualTeam] = rotatedTeam;
-            }
 
             this.net.updateState({
                 teams: updatedTeams,
@@ -431,12 +466,38 @@ export class GameEngine {
 
         if (unassigned.length > 0) {
             console.log("Distribuindo novos jogadores:", unassigned);
-            // 2. Distribuir para manter equilíbrio
-            // Tenta manter qtd igual. Se ímpar, sobra 1.
+
+            // 2. Distribuir novos jogadores
+            // Tenta preencher Reserve primeiro se estiver vago ou se precisarmos melhorar o fluxo
+            // Regra: Se totalActive + unassigned for ÍMPAR, precisamos de 1 reserve.
+            // Se for PAR, o reserve deve ser integrado (se houver vaga)?
+            // O usuário pediu: "ele deveria ser escalado como Reserva"
+
+            // Vamos priorizar preencher o Slot de Reserve se ele estiver vazio
+            // Isso garante que times impares (ex: 2v1) tenham um parceiro vindo do reserve.
+
+            let pool = [...unassigned];
+
+            // Verifica o reserve atual no STATE (ainda não atualizado localmente)
+            let currentReserve = this.serverState.reserve;
+
+            if (!currentReserve && pool.length > 0) {
+                // Pega um para ser reserve
+                const newRes = pool.shift();
+                // Precisamos atualizar o 'reserve' que será passado para setupRound.
+                // Como 'setupRound' recebe 'this.serverState.reserve', precisamos alterar isso ou interceptar.
+                // A chamada abaixo usa 'this.serverState.reserve'. Vamos mudar para passar variável local.
+                currentReserve = newRes;
+
+                // Nota: Precisamos persistir isso no final?
+                // setupRound vai chamar UpdateState que vai gravar o reserve correto.
+            }
+
+            // Distribuir restante
             let redCount = teams.red.length;
             let blueCount = teams.blue.length;
 
-            unassigned.forEach(uid => {
+            pool.forEach(uid => {
                 if (redCount <= blueCount) {
                     teams.red.push(uid);
                     redCount++;
@@ -445,7 +506,10 @@ export class GameEngine {
                     blueCount++;
                 }
             });
-            // O unassigned agora está 'distribuído' nas listas locais 'teams'
+
+            // Atualizar a referência de reserve para a chamada do setupRound
+            // Precisamos passar 'currentReserve' alterado.
+            this.serverState.reserve = currentReserve;
         }
 
         this.setupRound(
@@ -694,7 +758,12 @@ export class GameEngine {
         document.getElementById('waiting-room-code').textContent = this.net.roomId;
         this.ui.togglePauseOverlay(data.isPaused && data.status === 'playing');
 
-        if (this.transitionTimer) clearInterval(this.transitionTimer);
+        // Check status change to manage transition timer
+        // FIX: Only clear timer if we moved OUT of 'result' state
+        if (data.status !== 'result' && this.transitionTimer) {
+            clearInterval(this.transitionTimer);
+            this.transitionTimer = null;
+        }
 
         if (data.status === 'waiting') {
             if (this.net.isHost) this.ui.updateLobby(true, this.net.roomId);
@@ -791,21 +860,30 @@ export class GameEngine {
             title.style.color = isRed ? 'var(--team-red)' : 'var(--team-blue)';
             msg.textContent = `Acertaram ${data.correctCount} palavras.`;
 
-            const transitionDisplay = document.getElementById('transition-timer');
-            let countdown = 5;
-            transitionDisplay.textContent = countdown;
-
-            this.transitionTimer = setInterval(() => {
-                countdown--;
+            // FIX: Don't restart logic if timer is already running
+            if (!this.transitionTimer) {
+                const transitionDisplay = document.getElementById('transition-timer');
+                let countdown = 5;
                 transitionDisplay.textContent = countdown;
-                if (countdown <= 0) {
-                    clearInterval(this.transitionTimer);
-                    if (this.net.isHost) {
-                        this.nextRound();
-                    }
-                }
-            }, 1000);
 
+                this.transitionTimer = setInterval(() => {
+                    countdown--;
+                    transitionDisplay.textContent = countdown;
+                    if (countdown <= 0) {
+                        clearInterval(this.transitionTimer);
+                        this.transitionTimer = null; // Clear ref
+                        if (this.net.isHost) {
+                            // Safe call
+                            try {
+                                this.nextRound();
+                            } catch (e) {
+                                console.error("NEXT ROUND FAILED", e);
+                                alert("Erro ao iniciar próxima rodada: " + e.message);
+                            }
+                        }
+                    }
+                }, 1000);
+            }
             this.ui.showScreen('result');
         }
     }

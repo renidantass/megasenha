@@ -857,18 +857,31 @@ export class UIController {
         const input = document.getElementById('guess-input');
         if (!input) return;
 
+        let currentVal = input.value;
+
         if (key === 'ENTER') {
-            if (window.game) window.game.checkGuess(input.value);
+            if (window.game) window.game.checkGuess(currentVal);
+            return;
         } else if (key === '⌫') {
-            input.value = input.value.slice(0, -1);
-            // Manually trigger input event for UI update
-            input.dispatchEvent(new Event('input', { bubbles: true }));
+            currentVal = currentVal.slice(0, -1);
+        } else if (key === 'BACKSPACE') {
+            // Fallback if triggered by text
+            currentVal = currentVal.slice(0, -1);
         } else {
-            input.value += key;
-            input.dispatchEvent(new Event('input', { bubbles: true }));
+            currentVal += key;
         }
 
-        // Keep focus
+        // Direct update: Faster
+        input.value = currentVal;
+
+        // Update Visuals immediately
+        this.updateGuessSlots(currentVal);
+
+        // Optional: Notify game engine debounced? 
+        // Or just let the user hit Enter.
+        if (window.game) window.game.checkGuess(currentVal);
+
+        // Keep focus so native backspace still works if they switch
         input.focus();
     }
 }
