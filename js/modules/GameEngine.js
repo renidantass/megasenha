@@ -153,9 +153,41 @@ export class GameEngine {
             if (btn && this.net.isHost) {
                 const uid = btn.dataset.uid;
                 if (btn.classList.contains('btn-kick')) {
-                    if (confirm("Expulsar jogador?")) this.net.kickPlayer(uid);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Expulsar jogador?',
+                            text: "Essa ação não pode ser desfeita.",
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#3085d6',
+                            confirmButtonText: 'Sim, expulsar!',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                this.net.kickPlayer(uid);
+                                this.ui.showToast('success', 'Expulso', 'Jogador removido da sala.');
+                            }
+                        });
+                    } else if (confirm("Expulsar jogador?")) this.net.kickPlayer(uid);
                 } else if (btn.classList.contains('btn-make-host')) {
-                    if (confirm("Passar o controle de Host para este jogador?")) this.net.promoteNewHost(uid);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Promover a Host?',
+                            text: "Você perderá seus poderes de anfitrião.",
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33',
+                            confirmButtonText: 'Sim, promover!',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                this.net.promoteNewHost(uid);
+                                this.ui.showToast('success', 'Promovido', 'Novo anfitrião definido.');
+                            }
+                        });
+                    } else if (confirm("Passar o controle de Host para este jogador?")) this.net.promoteNewHost(uid);
                 } else {
                     const target = btn.dataset.target;
                     this.net.switchPlayerTeam(uid, target);
@@ -194,7 +226,10 @@ export class GameEngine {
 
     getNick() {
         const n = document.getElementById('input-nickname').value.trim();
-        if (!n) { alert("Digite um apelido"); return null; }
+        if (!n) {
+            this.ui.showToast('warning', 'Atenção', 'Digite um apelido para continuar.');
+            return null;
+        }
         localStorage.setItem('ms_nickname', n);
         return n;
     }
@@ -234,12 +269,13 @@ export class GameEngine {
         this.serverState = null;
         const nick = this.getNick();
         if (!nick) return;
-        this.ui.toggleLoading(true);
         try {
             await this.net.createRoom(nick);
             this.ui.updateLobby(true, this.net.roomId);
-        } catch (e) { alert(e.message); }
-        this.ui.toggleLoading(false);
+            this.ui.showToast('success', 'Sucesso', 'Sala criada com sucesso!');
+        } catch (e) {
+            this.ui.showToast('error', 'Erro', e.message);
+        }
     }
 
     async joinGame() {
@@ -248,25 +284,23 @@ export class GameEngine {
         const nick = this.getNick();
         if (!nick) return;
         const code = document.getElementById('input-join-room-code').value.trim().toUpperCase();
-        if (code.length !== 4) return alert("Código inválido");
+        if (code.length !== 4) return this.ui.showToast('warning', 'Código Inválido', 'O código deve ter 4 letras.');
 
-        this.ui.toggleLoading(true);
         try {
             const ok = await this.net.joinRoom(code, nick);
-            if (!ok) alert("Sala não encontrada");
-            else {
+            if (!ok) {
+                this.ui.showToast('error', 'Erro', 'Sala não encontrada.');
+            } else {
                 this.ui.updateLobby(false, code);
                 this.ui.toggleJoinModal(false);
+                this.ui.showToast('success', 'Entrou!', 'Você entrou na sala.');
             }
         } catch (e) {
-            alert("Erro ao entrar: " + e.message);
-        } finally {
-            this.ui.toggleLoading(false);
+            this.ui.showToast('error', 'Erro', 'Falha ao entrar: ' + e.message);
         }
     }
 
     async showRoomList() {
-        this.ui.toggleLoading(true);
         try {
             console.log("Iniciando busca de salas...");
             const rooms = await this.roomList.fetchAvailableRooms();
@@ -277,8 +311,6 @@ export class GameEngine {
             console.error("Erro ao listar salas:", e);
             this.ui.renderRoomsList([]);
             this.ui.showScreen('rooms');
-        } finally {
-            this.ui.toggleLoading(false);
         }
     }
 
@@ -310,7 +342,7 @@ export class GameEngine {
     async startMatch() {
         if (!this.serverState || !this.serverState.players) return;
         const players = Object.keys(this.serverState.players);
-        if (players.length < 2) return alert("Precisa de pelo menos 2 jogadores!");
+        if (players.length < 2) return this.ui.showToast('warning', 'Jogadores Insuficientes', 'Precisa de pelo menos 2 jogadores!');
 
         // Distribuir jogadores em times
         const distribution = this.teamManager.distributePlayersToTeams(players);
@@ -357,7 +389,7 @@ export class GameEngine {
 
             // Se não há times válidos, abortar
             if (validActiveTeams.length === 0) {
-                alert("Não há times válidos com jogadores!");
+                this.ui.showToast('error', 'Erro', 'Não há times válidos com jogadores!');
                 return;
             }
 
@@ -381,7 +413,7 @@ export class GameEngine {
             console.log(`Rodada ${roundNum} [${actualTeam}]:`, duoInfo);
 
             if (!duoInfo.guesser && !duoInfo.giver) {
-                alert("Erro crítico: Não foi possível formar dupla.");
+                this.ui.showToast('error', 'Erro Crítico', 'Não foi possível formar dupla.');
                 return;
             }
 
@@ -479,7 +511,7 @@ export class GameEngine {
             }, 3000);
         } catch (e) {
             console.error("Erro ao configurar rodada:", e);
-            alert("Erro ao configurar rodada: " + e.message);
+            this.ui.showToast('error', 'Erro', "Erro ao configurar rodada: " + e.message);
         }
     }
 
@@ -606,14 +638,33 @@ export class GameEngine {
 
     async hostSkipRound() {
         if (!this.net.isHost) return;
-        if (!confirm("Tem certeza que deseja forçar o fim desta rodada?")) return;
 
-        try {
-            await this.net.updateState({
-                status: 'result',
-                lastEvent: 'round_end_' + Date.now()
+        const confirmSkip = async () => {
+            try {
+                await this.net.updateState({
+                    status: 'result',
+                    lastEvent: 'round_end_' + Date.now()
+                });
+                this.ui.showToast('success', 'Pular Rodada', 'Rodada finalizada forçadamente.');
+            } catch (e) { console.error("Skip Round Error", e); }
+        };
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Pular Rodada?',
+                text: "Isso encerrará a rodada atual imediatamente.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#eab308',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sim, pular!',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) confirmSkip();
             });
-        } catch (e) { console.error("Skip Round Error", e); }
+        } else {
+            if (confirm("Tem certeza que deseja forçar o fim desta rodada?")) confirmSkip();
+        }
     }
 
     async actionCorrect() {
@@ -691,14 +742,14 @@ export class GameEngine {
         // Validation Rule 1: No single letters
         const cleanHint = hintText.trim();
         if (cleanHint.length < 2) {
-            alert("A dica deve ter pelo menos 2 letras!");
+            this.ui.showToast('warning', 'Dica Curta', 'A dica deve ter pelo menos 2 letras!');
             return;
         }
 
         // Validation Rule 2: Cannot contain the target word (basic check)
         const currentWord = this.serverState.words[this.serverState.currentWordIndex];
         if (currentWord && cleanHint.toUpperCase().includes(currentWord.toUpperCase())) {
-            alert("A dica não pode conter a palavra secreta!");
+            this.ui.showToast('warning', 'Dica Inválida', 'A dica não pode conter a palavra secreta!');
             return;
         }
 
@@ -767,7 +818,7 @@ export class GameEngine {
 
         // Se o jogador foi removido da sala, voltar ao menu
         if (uid && !data.players[uid] && this.net.roomId) {
-            alert("Você foi removido da sala.");
+            this.ui.showToast('error', 'Removido', 'Você foi removido da sala.');
             this.quit();
             return;
         }

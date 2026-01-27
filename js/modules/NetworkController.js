@@ -25,7 +25,11 @@ export class NetworkController {
         if (this.auth.currentUser) {
             await signOut(this.auth);
             this.user = null;
-            alert("Identidade resetada. Agora você pode entrar como um novo jogador.");
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('Identidade Resetada', 'Agora você pode entrar como um novo jogador.', 'info');
+            } else {
+                console.log("Identidade resetada.");
+            }
         }
     }
 
@@ -73,7 +77,7 @@ export class NetworkController {
             this.user = cred.user;
         } catch (e) {
             console.error("Falha Auth:", e);
-            alert("Erro de autenticação. Verifique o console.");
+            if (typeof Swal !== 'undefined') Swal.fire('Erro de Autenticação', 'Verifique o console.', 'error');
         }
     }
 
@@ -143,7 +147,8 @@ export class NetworkController {
 
             if (isTooOld || isEmpty) {
                 await deleteDoc(roomRef);
-                alert("Sala não existe mais, crie outra");
+                if (typeof Swal !== 'undefined') Swal.fire('Aviso', 'Sala não existe mais, crie outra.', 'warning');
+                else console.warn("Sala não existe mais");
                 return false;
             }
 
@@ -310,7 +315,10 @@ export class NetworkController {
                 this.lastUpdateTime = Date.now();
             } catch (e) {
                 console.error("ERRO UPDATE:", e);
-                if (e.code === 'permission-denied') alert("Erro de permissão no banco.");
+                if (e.code === 'permission-denied') {
+                    console.error("Erro de permissão no banco.");
+                    if (typeof Swal !== 'undefined') Swal.fire('Sem Permissão', 'Você não tem permissão para realizar esta ação.', 'error');
+                }
             } finally {
                 this.isUpdating = false;
             }

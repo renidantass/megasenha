@@ -24,7 +24,12 @@ export class TestSuite {
 
     async run() {
         this.log("=== INICIANDO SUÍTE DE TESTES (DEBUG) ===");
-        alert("MODO DEBUG ATIVADO: Rodando testes automatizados. Verifique o console.");
+        this.log("=== INICIANDO SUÍTE DE TESTES (DEBUG) ===");
+        if (this.game.ui && this.game.ui.showToast) {
+            this.game.ui.showToast('info', 'Debug', "Rodando testes automatizados...");
+        } else {
+            console.log("MODO DEBUG ATIVADO: Rodando testes automatizados.");
+        }
 
         try {
             await this.setupMockNetwork();
@@ -41,14 +46,23 @@ export class TestSuite {
 
             // Clean up visual
             setTimeout(() => {
-                alert("TESTES CONCLUÍDOS COM SUCESSO! Reiniciando...");
-                window.location.href = window.location.href.split('?')[0];
+                if (this.game.ui && this.game.ui.showToast) {
+                    this.game.ui.showToast('success', 'Sucesso', "Testes concluídos! Reiniciando...");
+                }
+                console.log("TESTES CONCLUÍDOS COM SUCESSO! Reiniciando...");
+                setTimeout(() => {
+                    window.location.href = window.location.href.split('?')[0];
+                }, 2000);
             }, 3000);
 
         } catch (e) {
             this.log(`⛔ SUÍTE ABORTADA: ${e.message}`, 'error');
             console.error(e);
-            alert(`FALHA NOS TESTES: ${e.message}`);
+            this.log(`⛔ SUÍTE ABORTADA: ${e.message}`, 'error');
+            console.error(e);
+            if (this.game.ui && this.game.ui.showToast) {
+                this.game.ui.showToast('error', 'Falha', `Testes falharam: ${e.message}`);
+            }
         }
     }
 

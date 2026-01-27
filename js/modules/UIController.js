@@ -18,7 +18,6 @@ export class UIController {
         this.scoreRedSidebar = document.getElementById('score-red-sidebar');
         this.scoreBlueSidebar = document.getElementById('score-blue-sidebar');
 
-        this.loading = document.getElementById('loading-overlay');
         this.hostStartPanel = document.getElementById('host-start-panel');
         this.waitingMsg = document.getElementById('waiting-msg');
         this.shareUrlInput = document.getElementById('share-url');
@@ -140,10 +139,6 @@ export class UIController {
         };
     }
 
-    toggleLoading(show) {
-        show ? this.loading.classList.remove('hidden') : this.loading.classList.add('hidden');
-    }
-
     togglePauseOverlay(show) {
         show ? document.getElementById('pause-overlay').classList.add('active') : document.getElementById('pause-overlay').classList.remove('active');
     }
@@ -157,6 +152,33 @@ export class UIController {
         if (show) {
             const input = document.getElementById('input-join-room-code');
             if (input) setTimeout(() => input.focus(), 50);
+        }
+    }
+
+    showToast(icon, title, text) {
+        if (typeof Swal !== 'undefined') {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                background: '#1e293b',
+                color: '#fff',
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+
+            Toast.fire({
+                icon: icon,
+                title: title,
+                text: text
+            });
+        } else {
+            // Fallback
+            alert(`${title}\n${text}`);
         }
     }
 
@@ -715,7 +737,6 @@ export class UIController {
             btn.style.marginTop = '20px';
             btn.textContent = '🔄 Reiniciar Agora';
             btn.onclick = () => {
-                this.loading.classList.remove('hidden');
                 if (window.game) window.game.resetGame();
                 else window.location.reload();
             };
