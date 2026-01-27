@@ -23,6 +23,7 @@ export class UIController {
         this.waitingMsg = document.getElementById('waiting-msg');
         this.shareUrlInput = document.getElementById('share-url');
         this.rulesModal = document.getElementById('rules-modal');
+        this.joinModal = document.getElementById('join-modal');
 
         // Game Elements
         this.scoreRed = document.getElementById('score-red');
@@ -149,6 +150,14 @@ export class UIController {
 
     toggleRules(show) {
         show ? this.rulesModal.classList.add('active') : this.rulesModal.classList.remove('active');
+    }
+
+    toggleJoinModal(show) {
+        show ? this.joinModal.classList.add('active') : this.joinModal.classList.remove('active');
+        if (show) {
+            const input = document.getElementById('input-join-room-code');
+            if (input) setTimeout(() => input.focus(), 50);
+        }
     }
 
     showScreen(screenName) {

@@ -129,8 +129,6 @@
             
             <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 1.5rem 0;"></div>
             
-            <input type="text" maxlength="4" id="input-room-code" class="input-base" placeholder="CÓDIGO DA SALA" maxlength="4" style="text-transform: uppercase; letter-spacing: 2px;">
-            
             <button id="btn-join" class="btn btn-join">
                 <span>👋</span> ENTRAR NA SALA
             </button>
@@ -138,6 +136,22 @@
             <button id="btn-sound" class="btn btn-sound">
                 🔊 Sons Ligados
             </button>
+        </div>
+    </div>
+
+    <!-- === JOIN ROOM MODAL === -->
+    <div id="join-modal" class="rules-modal">
+        <div class="rules-content" style="max-width: 400px; text-align: center;">
+            <h2 style="margin-bottom: 20px;">Entrar na Sala</h2>
+            <p style="color: #cbd5e1; margin-bottom: 20px;">Digite o código de 4 letras da sala:</p>
+            
+            <input type="text" maxlength="4" id="input-join-room-code" class="input-base" placeholder="CÓDIGO" style="text-transform: uppercase; letter-spacing: 5px; font-size: 2rem; text-align: center; margin-bottom: 20px;">
+            
+            <button id="btn-confirm-join" class="btn btn-start" style="margin-bottom: 15px;">
+                ENTRAR
+            </button>
+            
+            <button id="btn-close-join" class="btn btn-sound">Cancelar</button>
         </div>
     </div>
 

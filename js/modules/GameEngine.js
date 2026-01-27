@@ -42,13 +42,25 @@ export class GameEngine {
         const params = new URLSearchParams(window.location.search);
         const code = params.get('code');
         if (code) {
-            document.getElementById('input-room-code').value = code.toUpperCase();
+            const inputJ = document.getElementById('input-join-room-code');
+            if (inputJ) inputJ.value = code.toUpperCase();
         }
     }
 
     bindEvents() {
         document.getElementById('btn-create').onclick = () => this.createGame();
-        document.getElementById('btn-join').onclick = () => this.joinGame();
+
+        // JOIN MODAL
+        document.getElementById('btn-join').onclick = () => this.ui.toggleJoinModal(true);
+        document.getElementById('btn-close-join').onclick = () => this.ui.toggleJoinModal(false);
+        document.getElementById('btn-confirm-join').onclick = () => this.joinGame();
+
+        const joinInput = document.getElementById('input-join-room-code');
+        if (joinInput) {
+            joinInput.onkeypress = (e) => {
+                if (e.key === 'Enter') this.joinGame();
+            };
+        }
         document.getElementById('btn-start-match').onclick = () => this.startMatch();
         document.getElementById('btn-pass').onclick = () => this.actionPass();
         document.getElementById('btn-correct').onclick = () => this.actionCorrect();
@@ -156,7 +168,7 @@ export class GameEngine {
             const btn = e.target.closest('.btn-join-room');
             if (btn) {
                 const code = btn.dataset.code;
-                document.getElementById('input-room-code').value = code;
+                document.getElementById('input-join-room-code').value = code;
                 this.ui.showScreen('menu');
                 setTimeout(() => this.joinGame(), 100);
             }
@@ -235,14 +247,17 @@ export class GameEngine {
         this.serverState = null;
         const nick = this.getNick();
         if (!nick) return;
-        const code = document.getElementById('input-room-code').value.trim().toUpperCase();
+        const code = document.getElementById('input-join-room-code').value.trim().toUpperCase();
         if (code.length !== 4) return alert("Código inválido");
 
         this.ui.toggleLoading(true);
         try {
             const ok = await this.net.joinRoom(code, nick);
             if (!ok) alert("Sala não encontrada");
-            else this.ui.updateLobby(false, code);
+            else {
+                this.ui.updateLobby(false, code);
+                this.ui.toggleJoinModal(false);
+            }
         } catch (e) {
             alert("Erro ao entrar: " + e.message);
         } finally {
