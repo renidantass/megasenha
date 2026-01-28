@@ -204,15 +204,6 @@ export class UIController {
                 btnTheme.classList.add('hidden');
             }
         }
-
-        if (screenName === 'menu' || screenName === 'rooms') {
-            this.sidebar.classList.add('hidden-sidebar');
-            this.chatBtn.classList.add('hidden');
-            this.chatWindow.classList.remove('open');
-        } else {
-            this.sidebar.classList.remove('hidden-sidebar');
-            this.chatBtn.classList.remove('hidden');
-        }
     }
 
     toggleChat() {
@@ -331,17 +322,17 @@ export class UIController {
                         </span>
                     </div>
                     <div class="room-card-body">
-                        <span class="room-host" title="Host: ${room.hostName}">Host: ${room.hostName}</span>
+                        <span class="room-host" title="Host: ${room.hostName}"><i class="las la-crown"></i> ${room.hostName}</span>
                     </div>
                     <div class="room-card-info">
-                        <span class="room-players">👥 ${room.playerCount} jogador${room.playerCount !== 1 ? 'es' : ''}</span>
+                        <span class="room-players"><i class="las la-user-alt"></i> ${room.playerCount} jogador${room.playerCount !== 1 ? 'es' : ''}</span>
                         <span class="room-score">
                             <span style="color: var(--team-red);">●</span> ${room.scores.red} 
                             <span style="color: var(--team-blue);">●</span> ${room.scores.blue}
                         </span>
                     </div>
                     <button class="btn btn-join-room" data-code="${room.code}">
-                        Entrar
+                        <i class="las la-door-open"></i> Entrar
                     </button>
                 </div>
             `;

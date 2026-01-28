@@ -27,7 +27,7 @@ export class GameEngine {
         this.initNick();
         this.checkUrlParams();
 
-        document.getElementById('btn-sound').textContent = this.audio.enabled ? '🔊 Sons Ligados' : '🔇 Sons Desligados';
+        document.getElementById('btn-sound').innerHTML = this.audio.enabled ? '<i class="las la-volume-mute"></i> Desligar som' : '<i class="las la-volume-up"></i> Ligar som';
 
         document.addEventListener('add-reaction', (e) => {
             this.addReaction(e.detail.msgId, e.detail.reaction);
@@ -93,7 +93,7 @@ export class GameEngine {
 
         document.getElementById('btn-sound').onclick = (e) => {
             const en = this.audio.toggle();
-            e.target.textContent = en ? '🔊 Sons Ligados' : '🔇 Sons Desligados';
+            e.target.innerHTML = en ? '<i class="las la-volume-mute"></i> Desligar som' : '<i class="las la-volume-up"></i> Ligar som';
         };
 
         // THEME TOGGLE
@@ -111,9 +111,9 @@ export class GameEngine {
             input.select();
             input.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(input.value).then(() => {
-                const originalText = document.getElementById('btn-copy-url').textContent;
-                document.getElementById('btn-copy-url').textContent = "✅";
-                setTimeout(() => document.getElementById('btn-copy-url').textContent = originalText, 2000);
+                const originalText = document.getElementById('btn-copy-url').innerHTML;
+                document.getElementById('btn-copy-url').innerHTML = '<i class="las la-check"></i>';
+                setTimeout(() => document.getElementById('btn-copy-url').innerHTML = originalText, 2000);
             });
         };
 

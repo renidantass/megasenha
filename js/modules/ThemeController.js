@@ -18,7 +18,7 @@ export class ThemeController {
     init() {
         this.applyTheme(this.currentTheme);
         this.updateThemeButton();
-        
+
         // Detecta mudança no tema do sistema
         if (window.matchMedia) {
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
@@ -45,7 +45,7 @@ export class ThemeController {
     updateThemeButton() {
         const btn = document.getElementById('btn-toggle-theme');
         if (btn) {
-            btn.textContent = this.currentTheme === 'dark' ? '☀️' : '🌙';
+            btn.innerHTML = this.currentTheme === 'dark' ? '<i class="las la-sun"></i>' : '<i class="las la-moon"></i>';
             btn.setAttribute('aria-label', `Tema: ${this.currentTheme === 'dark' ? 'Escuro' : 'Claro'}`);
         }
     }
