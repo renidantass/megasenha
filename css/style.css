@@ -1169,11 +1169,6 @@ body {
 }
 
 /* --- MENU SCREEN --- */
-.title-container {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
 .title-mega {
     font-size: 4rem;
     font-weight: 900;
