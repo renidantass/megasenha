@@ -1883,6 +1883,7 @@ body {
     max-height: 100vh;
     overflow-y: auto;
     padding: 0 10px;
+    justify-content: space-around;
     animation: fadeIn 0.3s ease-in;
 }
 
